@@ -25,6 +25,7 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 - [[Malware] Thumb Drive (Medium)](#thumb-drive)
 - [[Malware] Babel (Medium)](#babel)
 - [[Malware] Hot off the Press (Medium)](#hot-off-the-press)
+- [[Malware] Black Cat II (Hard) ⭐](#black-cat-ii)
 - [[OSINT] Under The Bridge (Medium)](#under-the-bridge)
 - [[OSINT] Operation Not Found (Medium)](#operation-not-found)
 - [[OSINT] Where am I? (Medium)](#where-am-i)
@@ -1085,6 +1086,175 @@ URL decoding this in [CyberChef](https://gchq.github.io/CyberChef/#recipe=URL_De
 
 ```
 flag{dbfe5f755a898ce5f2088b0892850bf7}
+```
+
+## Black Cat II
+I opened this one in `dnSpy v6.1.8 32-bit` to take a look at the source code. The program asks for a 64-bit key, and validates it, then calls `DecryptFiles(dir, key)`:
+
+```
+private void button1_Click(object sender, EventArgs e)
+		{
+			try
+			{
+				string directoryPath = this.fullPathToVictimFiles.Text.ToString().Trim();
+				string text = this.keyInputTextBox.Text.ToString().Trim().ToLower();
+				if (text == "")
+				{
+					MessageBox.Show("No key provided!");
+				}
+				else if (text.Length < 64)
+				{
+					MessageBox.Show("Key must be 64 chars");
+				}
+				else
+				{
+					MessageBox.Show("Running decryption routine...");
+					DecryptorUtil.DecryptFiles(directoryPath, text);
+					MessageBox.Show("Files decrypted!");
+				}
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show("Error: " + ex.Message);
+			}
+		}
+```
+
+The file decryption routine is as follows:
+
+```
+public static void DecryptFiles(string directoryPath, string decryptionKey)
+		{
+			string[] files = Directory.GetFiles(directoryPath, "*.encry");
+			if (files.Length == 0)
+			{
+				return;
+			}
+			string text = null;
+			foreach (string text2 in files)
+			{
+				string key;
+				if (text == null)
+				{
+					key = decryptionKey;
+				}
+				else
+				{
+					key = DecryptorUtil.CalculateSHA256Hash(text);
+				}
+				string text3 = Path.Combine(directoryPath, Path.GetFileNameWithoutExtension(text2) + ".decry");
+				DecryptorUtil.AESDecryptFile(text2, text3, key, DecryptorUtil.hardcodedIV);
+				text = text3;
+			}
+			Console.WriteLine("[*] Decryption completed.");
+		}
+```
+
+Breaking it down, the function `DecryptFiles` performs the following:
+
+1. Get a list of all files ending in `.encry` under the user-supplied directory
+2. For the first pass, set the decryption key to the user-supplied `decryptionKey`
+3. Determine the decrypted file's filename with the new `.decry` extension
+4. Call `AESDecryptFile` with a hardcoded initialization vector (IV)
+5. For the next file, instead of using the user-supplied key as the AES decryption key, it will use `second_file.decry` and run it through the function `CalculateSHA256Hash` to get the key.
+
+The value of this hardcoded IV (found at the bottom of the script) is:
+
+```
+01 23 45 67 89 ab cd ef fe dc ba 98 76 54 32 10
+```
+
+The important parts of the `AESDecryptFile` are as follows:
+
+```
+byte[] key2 = DecryptorUtil.GenerateAesKeyFromPassword(key);
+aes.Key = key2;
+aes.IV = iv;
+aes.Mode = CipherMode.CFB;
+aes.Padding = PaddingMode.Zeros;
+```
+
+This indicates that the encryption algorithm is `AES-CFB`, is using a hardcoded IV which is the same for all files, and is zero-padded. The `GenerateAesKeyFromPassword` function is as follows:
+
+```
+private static byte[] GenerateAesKeyFromPassword(string password)
+		{
+			byte[] bytes = Encoding.UTF8.GetBytes("KnownSaltValue");
+			byte[] result;
+			using (Rfc2898DeriveBytes rfc2898DeriveBytes = new Rfc2898DeriveBytes(password, bytes, 10000, HashAlgorithmName.SHA256))
+			{
+				byte[] bytes2 = rfc2898DeriveBytes.GetBytes(32);
+				if (bytes2.Length != 32)
+				{
+					throw new InvalidOperationException("Derived key size is not valid for AES encryption.");
+				}
+				result = bytes2;
+			}
+			return result;
+		}
+```
+
+This indicates the key is derived by the `PBKDF2-SHA256` algorithm with a known salt value of `KnownSaltValue`, using 10,000 rounds.
+
+But what about `CalculateSHA256Hash`? Remember, for every file except for the first, this function is run with the previous filename as a parameter. The code is as follows:
+
+```
+private static string CalculateSHA256Hash(string filePath)
+		{
+			string result;
+			using (SHA256 sha = SHA256.Create())
+			{
+				using (FileStream fileStream = File.OpenRead(filePath))
+				{
+					result = BitConverter.ToString(sha.ComputeHash(fileStream)).Replace("-", "").ToLower();
+				}
+			}
+			return result;
+		}
+```
+
+This code opens the file, reads and hashes its contents using `SHA-256`, removes any `-` character and converts to lowercase, and returns this.
+
+Let's break it down. Assume we have two files that are getting decrypted:
+
+```
+file1.encry
+file2.encry
+```
+
+In this case, `file1.encry` will be decrypted with the user supplied key and hardcoded IV. The program moves on to `file2.encry`, which it will decrypt using the same IV, but now the key is set to the SHA256 hashed contents of the now decrypted `file1.decry`.
+
+So what if we can find out what the `SHA-256` hash of one of the original files are?
+
+The directory of encrypted files is as follows:
+
+```
+10/05/2023  11:57 AM            75,488 A_Sunday_Afternoon_on_the_Island_of_La_Grande_Jatte_by_Georges_Seurat_5773ff06-a03e-401b-8914-6106bc277bfd_large.jpg.encry
+10/05/2023  11:57 AM            84,640 Cafe_Terrace_at_Night_by_Vincent_van_Gogh_large.jpg.encry
+10/05/2023  11:57 AM                96 flag.txt.encry
+10/05/2023  11:57 AM            29,696 Guernica_by_Pablo_Picasso_large.jpg.encry
+10/05/2023  11:57 AM            59,312 Impression_Sunrise_by_Claude_Monet_large.jpg.encry
+10/05/2023  11:57 AM            12,432 Wanderer_above_the_Sea_of_Fog_by_Caspar_David_Friedrich_large.jpg.encry
+```
+
+Assuming the decryption routing ran through the files in alphanumeric order, `Cafe_Terrace_at_Night_by_Vincent_van_Gogh_large.jpg` would have been encrypted right before `flag.txt`. Because `flag.txt` was encrypted after that JPEG, it should have been encrypted with the key set to the SHA-256 contents of `Cafe_Terrace_at_Night_by_Vincent_van_Gogh_large.jpg`. Note that the hash is also passed through `GenerateAesKeyFromPassword` before being used to decrypt!
+
+I found the original copy of Cafe Terrace online. What I did to force `flag.txt` to get decrypted was place it in the same directory, rename it to `Cafe_Terrace_at_Night_by_Vincent_van_Gogh_large.jpg.decry`, and remove all write permissions to this file so it wouldn't get overwritten by the decryptor. 
+
+What happened:
+
+1. The decryptor took whatever key I gave to it
+2. It decrypted the first file with this wrong key
+3. When it got to Cafe Terrace, it decrypted that too, but **could not write the wrong decrypted data to the `.decry` file!**
+4. After "decrypting" Cafe Terrace, the program grabs its contents, which are the contents of the original Cafe Terrace now, and derives a key from that
+5. The key we entered is no longer being used for anything at this point. The decryptor uses the correct Cafe Terrace contents, calculates its hash, derives an AES key from this hash, and successfully decrypts `flag.txt`
+
+The result:
+
+```
+Keeping another flag here for safe keeping again! 
+
+flag{03365961aa6aca589b59c683eecc9659}
 ```
 
 ## Under The Bridge
