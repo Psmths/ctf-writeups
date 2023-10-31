@@ -1,4 +1,4 @@
-Here are my solutions for the challenges I solved as a part of HuntressCTF 2023. I solved a total of 53 challenges over the course of this CTF, most of which are included in this writeup. My favorite challenges are denoted by a ⭐ emoji! The challenge solve table with timestamps is at [the bottom](#results).
+Here are my solutions for the challenges I solved as a part of HuntressCTF 2023. I solved a total of 57 challenges over the course of this CTF, most of which are included in this writeup. My favorite challenges are denoted by a ⭐ emoji! The challenge solve table with timestamps is at [the bottom](#results).
 
 - [[Warmups] F12 (Easy)](#f12)
 - [[Warmups] String Cheese (Easy)](#string-cheese)
@@ -1725,56 +1725,60 @@ flag{da1e2bf9951c9eb1c33b1d2008064fee}
 ## Results
 |Challenge|Category|Value|Time|
 |--- |--- |--- |--- |
-|Texas Chainsaw Massacre: Tokyo Drift|Forensics|50|2023-10-25 22:51:26.146723|
-|F12|Warmups|50|2023-10-25 22:55:33.366499|
-|String Cheese|Warmups|50|2023-10-25 23:01:33.669462|
-|Notepad|Warmups|50|2023-10-25 23:02:15.201740|
-|Layered Security|Warmups|50|2023-10-25 23:05:27.844770|
-|Comprezz|Warmups|50|2023-10-25 23:10:48.349657|
-|Chicken Wings|Warmups|50|2023-10-25 23:34:16.107442|
-|CaesarMirror|Warmups|50|2023-10-25 23:45:11.868562|
-|Tragedy|Forensics|50|2023-10-25 23:48:35.821756|
-|Opposable Thumbs|Forensics|50|2023-10-26 00:41:25.668922|
-|Dumpster Fire|Forensics|50|2023-10-26 01:00:48.454468|
-|Wimble|Forensics|50|2023-10-26 01:09:50.341731|
-|Tragedy Redux|Forensics|50|2023-10-26 05:18:53.720503|
-|Traffic|Forensics|50|2023-10-26 17:57:27.045155|
-|Rogue Inbox|Forensics|50|2023-10-26 17:57:35.421417|
-|Backdoored Splunk|Forensics|50|2023-10-26 18:13:45.812295|
-|Bad Memory|Forensics|50|2023-10-26 19:06:06.948692|
-|PHP Stager|Malware|50|2023-10-26 20:08:58.592515|
-|HumanTwo|Malware|50|2023-10-26 20:43:15.306062|
-|BlackCat|Malware|50|2023-10-27 00:01:40.887051|
-|Under The Bridge|OSINT|50|2023-10-27 01:12:44.234562|
-|Operation Not Found|OSINT|50|2023-10-27 01:29:30.017660|
-|Where am I?|OSINT|50|2023-10-27 01:32:58.523825|
-|Book By Its Cover|Warmups|50|2023-10-27 01:43:23.919023|
-|BaseFFFF+1|Warmups|50|2023-10-27 01:54:21.070324|
-|Baking|Warmups|50|2023-10-27 01:57:47.643390|
-|Dialtone|Warmups|50|2023-10-27 02:21:24.943867|
-|Read The Rules|Warmups|50|2023-10-27 02:22:08.619734|
-|Query Code|Warmups|50|2023-10-27 02:22:49.189874|
-|Who is Real?|Miscellaneous|50|2023-10-27 02:23:53.926271|
-|I Wont Let You Down|Miscellaneous|50|2023-10-27 02:29:09.193122|
-|M Three Sixty Five - General Info|Miscellaneous|50|2023-10-27 02:33:18.006880|
-|M Three Sixty Five - Conditional Access|Miscellaneous|50|2023-10-27 02:34:48.520259|
-|M Three Sixty Five - Teams|Miscellaneous|50|2023-10-27 02:36:49.021424|
-|M Three Sixty Five - The President|Miscellaneous|50|2023-10-27 02:41:11.002344|
-|PRESS PLAY ON TAPE|Miscellaneous|50|2023-10-27 02:56:55.741866|
-|Technical Support|Warmups|50|2023-10-27 03:00:31.221472|
-|Welcome to the Park|Miscellaneous|50|2023-10-27 03:28:02.588658|
-|Land Before Time|Steganography|50|2023-10-27 03:49:44.370821|
-|VeeBeeEee|Malware|50|2023-10-27 04:12:38.426078|
-|Opendir|Malware|50|2023-10-27 04:21:32.360604|
-|Operation Eradication|Miscellaneous|50|2023-10-27 05:20:58.219980|
-|Zerion|Malware|50|2023-10-27 15:28:10.771693|
-|Indirect Payload|Miscellaneous|50|2023-10-28 22:34:51.639979|
-|Snake Oil|Malware|50|2023-10-28 23:12:00.619334|
-|Speakfriend|Malware|50|2023-10-28 23:58:28.564069|
-|Thumb Drive|Malware|50|2023-10-29 00:36:42.697116|
-|Hot Off The Press|Malware|50|2023-10-29 02:11:20.974631|
-|RAT|Malware|50|2023-10-30 04:00:11.190491|
-|Babel|Miscellaneous|50|2023-10-30 04:26:15.302384|
-|Feedback|Feedback|0|2023-10-30 05:03:27.716707|
-|Discord Snowflake Scramble|Miscellaneous|50|2023-10-30 05:11:45.120547|
-|MFAtigue|Miscellaneous|50|2023-10-30 05:45:37.631666|
+|HumanTwo|Malware|50|2023-10-26T20:43:15.306062|
+|Opendir|Malware|50|2023-10-27T04:21:32.360604|
+|Operation Eradication|Miscellaneous|50|2023-10-27T05:20:58.219980|
+|RAT|Malware|50|2023-10-30T04:00:11.190491|
+|Snake Oil|Malware|50|2023-10-28T23:12:00.619334|
+|Traffic|Forensics|50|2023-10-26T17:57:27.045155|
+|VeeBeeEee|Malware|50|2023-10-27T04:12:38.426078|
+|Wimble|Forensics|50|2023-10-26T01:09:50.341731|
+|Zerion|Malware|50|2023-10-27T15:28:10.771693|
+|Read The Rules|Warmups|50|2023-10-27T02:22:08.619734|
+|Thumb Drive|Malware|50|2023-10-29T00:36:42.697116|
+|Who is Real?|Miscellaneous|50|2023-10-27T02:23:53.926271|
+|Query Code|Warmups|50|2023-10-27T02:22:49.189874|
+|Dialtone|Warmups|50|2023-10-27T02:21:24.943867|
+|Babel|Miscellaneous|50|2023-10-30T04:26:15.302384|
+|Bad Memory|Forensics|50|2023-10-26T19:06:06.948692|
+|Baking|Warmups|50|2023-10-27T01:57:47.643390|
+|BaseFFFF+1|Warmups|50|2023-10-27T01:54:21.070324|
+|Book By Its Cover|Warmups|50|2023-10-27T01:43:23.919023|
+|CaesarMirror|Warmups|50|2023-10-25T23:45:11.868562|
+|Chicken Wings|Warmups|50|2023-10-25T23:34:16.107442|
+|Comprezz|Warmups|50|2023-10-25T23:10:48.349657|
+|Dumpster Fire|Forensics|50|2023-10-26T01:00:48.454468|
+|F12|Warmups|50|2023-10-25T22:55:33.366499|
+|Indirect Payload|Miscellaneous|50|2023-10-28T22:34:51.639979|
+|Layered Security|Warmups|50|2023-10-25T23:05:27.844770|
+|Notepad|Warmups|50|2023-10-25T23:02:15.201740|
+|Opposable Thumbs|Forensics|50|2023-10-26T00:41:25.668922|
+|PHP Stager|Malware|50|2023-10-26T20:08:58.592515|
+|String Cheese|Warmups|50|2023-10-25T23:01:33.669462|
+|Technical Support|Warmups|50|2023-10-27T03:00:31.221472|
+|Tragedy|Forensics|50|2023-10-25T23:48:35.821756|
+|Backdoored Splunk|Forensics|50|2023-10-26T18:13:45.812295|
+|Where am I?|OSINT|50|2023-10-27T01:32:58.523825|
+|Operation Not Found|OSINT|50|2023-10-27T01:29:30.017660|
+|I Wont Let You Down|Miscellaneous|50|2023-10-27T02:29:09.193122|
+|Land Before Time|Steganography|50|2023-10-27T03:49:44.370821|
+|Under The Bridge|OSINT|50|2023-10-27T01:12:44.234562|
+|Rogue Inbox|Forensics|50|2023-10-26T17:57:35.421417|
+|BlackCat|Malware|50|2023-10-27T00:01:40.887051|
+|Discord Snowflake Scramble|Miscellaneous|50|2023-10-30T05:11:45.120547|
+|Snake Eater|Malware|50|2023-10-30T22:02:13.325102|
+|Welcome to the Park|Miscellaneous|50|2023-10-27T03:28:02.588658|
+|MFAtigue|Miscellaneous|50|2023-10-30T05:45:37.631666|
+|Snake Eater II|Malware|50|2023-10-31T00:50:47.592593|
+|Rock, Paper, Psychic|Miscellaneous|50|2023-10-31T00:27:10.552937|
+|Hot Off The Press|Malware|50|2023-10-29T02:11:20.974631|
+|Speakfriend|Malware|50|2023-10-28T23:58:28.564069|
+|BlackCat II|Malware|310|2023-10-30T20:37:35.865457|
+|PRESS PLAY ON TAPE|Miscellaneous|50|2023-10-27T02:56:55.741866|
+|M Three Sixty Five - Conditional Access|Miscellaneous|50|2023-10-27T02:34:48.520259|
+|M Three Sixty Five - Teams|Miscellaneous|50|2023-10-27T02:36:49.021424|
+|M Three Sixty Five - The President|Miscellaneous|50|2023-10-27T02:41:11.002344|
+|M Three Sixty Five - General Info|Miscellaneous|50|2023-10-27T02:33:18.006880|
+|Texas Chainsaw Massacre: Tokyo Drift|Forensics|50|2023-10-25T22:51:26.146723|
+|Crab Rave|Malware|183|2023-10-31T18:09:53.970074|
+|Tragedy Redux|Forensics|50|2023-10-26T05:18:53.720503|
