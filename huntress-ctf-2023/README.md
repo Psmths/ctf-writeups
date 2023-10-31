@@ -25,6 +25,7 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 - [[Malware] Thumb Drive (Medium)](#thumb-drive)
 - [[Malware] Babel (Medium)](#babel)
 - [[Malware] Hot off the Press (Medium)](#hot-off-the-press)
+- [[Malware] Snake Eater II](#snake-eater-ii)
 - [[Malware] Black Cat II (Hard) ⭐](#black-cat-ii)
 - [[OSINT] Under The Bridge (Medium)](#under-the-bridge)
 - [[OSINT] Operation Not Found (Medium)](#operation-not-found)
@@ -37,6 +38,7 @@ Here are my solutions for the challenges I solved as a part of HuntressCTF 2023.
 - [[Misc] Welcome to the Park (Easy)](#welcome-to-the-park)
 - [[Misc] Indirect Payload (Medium)](#indirect-payload)
 - [[Misc] MFAtigue (Medium) ⭐](#mfatigue)
+- [[Misc] Rock, Paper, Psychic (Medium) ⭐](#rock-paper-psychic)
 - [[Stego] Land Before Time (Easy)](#land-before-time)
 
 ## F12
@@ -1088,6 +1090,20 @@ URL decoding this in [CyberChef](https://gchq.github.io/CyberChef/#recipe=URL_De
 flag{dbfe5f755a898ce5f2088b0892850bf7}
 ```
 
+## Snake Eater II
+This challenge was similar to snake eater I. I did this analysis dynamically. First, I ran it a few times with process monitor and searched for `flag.txt`, and saw that every run, the program was writing `flag.txt` to a random location, but then deleting it. 
+
+To get around this, I opened it with x64Dbg. I searched for the moment it wrote `flag.txt` and inspected the buffer for the API call to `NtWriteFile`, which contained the flag.
+
+```
+NtWriteFile ( 0x00000000000001cc, NULL, NULL, NULL, 0x000000c72c5e9ad0, 0x00000247214decf0, 38, NULL, NULL )
+```
+
+```
+0000  66 6c 61 67 7b 62 65 34 37 33 38 37 61 62 37 37 32 35 31 65 63 66 38  flag{be47387ab77251ecf8
+0017  30 64 62 31 62 36 37 32 35 64 64 37 61 63 7d                          0db1b6725dd7ac}    
+```
+
 ## Black Cat II
 I opened this one in `dnSpy v6.1.8 32-bit` to take a look at the source code. The program asks for a 64-bit key, and validates it, then calls `DecryptFiles(dir, key)`:
 
@@ -1588,6 +1604,104 @@ And was therefore able to authenticate as this account in the Azure login page. 
 
 ```
 flag{9b896a677de35d7dfa715a05c25ef89e} 
+```
+
+## Rock Paper Psychic
+This challenge was a binary that simulates a game of Rock, Paper, Scissors with a computer. The computer is programmed to always beat you no matter what you choose. The Ghidra disassembly for the main function is:
+
+```c
+void main__main_62(undefined8 param_1,undefined8 param_2,undefined8 param_3,ulonglong param_4)
+
+{
+  ulonglong *puVar1;
+  longlong *plVar2;
+  ulonglong uVar3;
+  
+  echoBinSafe(&TM__V45tF8B8NBcxFcjfe7lhBw_2,1);
+  nossleep(1000);
+  echoBinSafe(&TM__V45tF8B8NBcxFcjfe7lhBw_4,1);
+  nossleep(1000);
+  echoBinSafe(&TM__V45tF8B8NBcxFcjfe7lhBw_6,1);
+  nossleep(1000);
+  echoBinSafe(&TM__V45tF8B8NBcxFcjfe7lhBw_8,1);
+  nossleep(1000);
+  echoBinSafe(&TM__V45tF8B8NBcxFcjfe7lhBw_10,1);
+  nossleep(1000);
+  echoBinSafe(&TM__V45tF8B8NBcxFcjfe7lhBw_12,1);
+  do {
+    while( true ) {
+      echoBinSafe(&TM__V45tF8B8NBcxFcjfe7lhBw_14,1);
+      puVar1 = readLineFromStdin__impureZrdstdin_1(&TM__V45tF8B8NBcxFcjfe7lhBw_16);
+      puVar1 = nuctoLowerStr(puVar1);
+      if (puVar1 != 0x0) break;
+LAB_00416b9d:
+      echoBinSafe(&TM__V45tF8B8NBcxFcjfe7lhBw_20,1);
+    }
+    uVar3 = *puVar1;
+    if (uVar3 == 4) {
+      if (*(puVar1 + 2) == 0x6b636f72) goto LAB_00416bbd;
+      goto LAB_00416b9d;
+    }
+    if (uVar3 != 5) {
+      if ((uVar3 == 8) && (puVar1[2] == 0x73726f7373696373)) goto LAB_00416bbd;
+      goto LAB_00416b9d;
+    }
+    if ((*(puVar1 + 2) != 0x65706170) || (*(puVar1 + 0x14) != 'r')) goto LAB_00416b9d;
+LAB_00416bbd:
+    plVar2 = getComputerChoice__main_55(puVar1);
+    echoBinSafe(&TM__V45tF8B8NBcxFcjfe7lhBw_22,1);
+    uVar3 = determineWinner__main_58(puVar1,plVar2);
+    if (uVar3 == '\0') {
+      playerWins__main_10(puVar1,plVar2,param_3,param_4);
+      randomize__pureZrandom_277();
+      main__main_62(puVar1,plVar2,param_3,param_4);
+      return;
+    }
+    computerWins__main_11();
+    puVar1 = readLineFromStdin__impureZrdstdin_1(&TM__V45tF8B8NBcxFcjfe7lhBw_50);
+    puVar1 = nuctoLowerStr(puVar1);
+    if (((puVar1 == 0x0) || (*puVar1 != 3)) || (*(puVar1 + 2) != 0x6579)) {
+      return;
+    }
+    if (*(puVar1 + 0x12) != 's') {
+      return;
+    }
+  } while( true );
+}
+```
+
+The important part of the function is:
+
+```c
+uVar3 = determineWinner__main_58(puVar1,plVar2);
+if (uVar3 == '\0') {
+  playerWins__main_10(puVar1,plVar2,param_3,param_4);
+  randomize__pureZrandom_277();
+  main__main_62(puVar1,plVar2,param_3,param_4);
+  return;
+}
+```
+
+The corresponding assembly is:
+
+```assembly
+CALL     determineWinner__main_58
+TEST     AL, AL
+JNZ      LAB_00416c6a
+CALL     computerWins__main_11
+```
+
+To solve this, I simply patched the `JNZ` instruction to its opposite, `JZ`. In Ghidra, to patch an instruction, just right click it and press `Patch Instruction`. This jumps to  `LAB_00416c6a`:
+
+```assembly
+CALL playerWins__main_10
+```
+
+Now when I run the program:
+
+```
+[#] Wait, how did you do that??!! Cheater! CHEATER!!!!!!
+[+] flag{35bed450ed9ac9fcb3f5f8d547873be9}
 ```
 
 ## Land Before Time
