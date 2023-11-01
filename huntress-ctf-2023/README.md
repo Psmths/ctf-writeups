@@ -1093,7 +1093,7 @@ flag{dbfe5f755a898ce5f2088b0892850bf7}
 ## Snake Eater II
 This challenge was similar to snake eater I. I did this analysis dynamically. First, I ran it a few times with process monitor and searched for `flag.txt`, and saw that every run, the program was writing `flag.txt` to a random location, but then deleting it. 
 
-To get around this, I opened it with x64Dbg. I searched for the moment it wrote `flag.txt` and inspected the buffer for the API call to `NtWriteFile`, which contained the flag.
+To get around this, I opened it with APIMonitor. I searched for the moment it wrote `flag.txt` and inspected the buffer for the API call to `NtWriteFile`, which contained the flag.
 
 ```
 NtWriteFile ( 0x00000000000001cc, NULL, NULL, NULL, 0x000000c72c5e9ad0, 0x00000247214decf0, 38, NULL, NULL )
